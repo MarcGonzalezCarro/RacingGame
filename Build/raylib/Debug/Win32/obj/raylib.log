@@ -1,0 +1,10 @@
+﻿  raudio.c
+  rcore.c
+  rmodels.c
+  rglfw.c
+  rshapes.c
+  rtext.c
+  rtextures.c
+  utils.c
+  Generating Code...
+  raylib.vcxproj -> C:\Users\marcgc4\Downloads\Handout8_Solution\Handout8_Solution\Build\raylib\Debug\Win32\raylib.lib
