@@ -1,5 +1,3 @@
-﻿  ModulePhysics.cpp
-C:\Users\marcgc4\Downloads\Handout8_Solution\Handout8_Solution\Source\ModulePhysics.cpp(181,19): warning C4101: 'flJoint': unreferenced local variable
-C:\Users\marcgc4\Downloads\Handout8_Solution\Handout8_Solution\Source\ModulePhysics.cpp(181,30): warning C4101: 'frJoint': unreferenced local variable
-C:\Users\marcgc4\Downloads\Handout8_Solution\Handout8_Solution\Source\ModulePhysics.cpp(318,27): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  PhysicsGame.vcxproj -> C:\Users\marcgc4\Downloads\Handout8_Solution\Handout8_Solution\Build\PhysicsGame\Debug\Win32\PhysicsGame.exe
+﻿  PhysicsGame.vcxproj -> C:\Users\solda\OnedriveMurkano\OneDrive\Escritorio\Projecte1\RacingGame\Build\PhysicsGame\Debug\Win32\PhysicsGame.exe
+  "pwsh.exe" no se reconoce como un comando interno o externo,
+  programa o archivo por lotes ejecutable.

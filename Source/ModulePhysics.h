@@ -68,7 +68,7 @@ public:
 	void BeginContact(b2Contact* contact);
 
 private:
-
+	float accumulator = 0.0f;
 	bool debug;
 	b2World* world;
 	b2MouseJoint* mouse_joint;

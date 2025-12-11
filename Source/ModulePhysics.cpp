@@ -53,7 +53,17 @@ bool ModulePhysics::Start()
 
 update_status ModulePhysics::PreUpdate()
 {
-	world->Step(1.0f / 60.0f, 6, 2);
+	accumulator += App->deltaTime;
+
+	const float timeStep = 1.0f / 60.0f;
+	const int velocityIterations = 6;
+	const int positionIterations = 2;
+
+	while (accumulator >= timeStep)
+	{
+		world->Step(timeStep, velocityIterations, positionIterations);
+		accumulator -= timeStep;
+	}
 
 	for (b2Contact* c = world->GetContactList(); c; c = c->GetNext())
 	{

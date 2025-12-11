@@ -22,6 +22,8 @@ public:
 	bool Start();
 	update_status Update();
 	bool CleanUp();
+	void CreateCar(int x, int y, int w, int h, bool playable);
+	void CreateRace();
 	void OnCollision(PhysBody* bodyA, PhysBody* bodyB);
 
 public:

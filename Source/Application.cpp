@@ -71,6 +71,9 @@ update_status Application::Update()
 {
 	update_status ret = UPDATE_CONTINUE;
 
+	deltaTime = frame_time.ReadSec();  
+	frame_time.Start();
+
 	for (auto it = list_modules.begin(); it != list_modules.end() && ret == UPDATE_CONTINUE; ++it)
 	{
 		Module* module = *it;

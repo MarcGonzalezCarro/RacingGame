@@ -20,7 +20,7 @@ public:
 	ModuleAudio* audio;
 	ModulePhysics* physics;
 	ModuleGame* scene_intro;
-
+	float deltaTime = 0.0f;
 private:
 
 	std::vector<Module*> list_modules;
