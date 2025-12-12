@@ -49,9 +49,8 @@ public:
 	PhysBody* CreateCircle(int x, int y, int radius);
 	PhysBody* CreateCircle(int x, int y, int radius, b2Vec2 initialVelocity, float mass);
 	PhysBody* CreateRectangle(int x, int y, int width, int height);
-	PhysBody* CreateCar(int x, int y, int width, int height, b2Body* tire1, b2Body* tire2, b2Body* tire3, b2Body* tire4);
-
-	PhysBody* CreateTire(int x, int y, int width, int height);
+	PhysBody* CreateCar(int x, int y, int width, int height, int dir, b2Body* tire1, b2Body* tire2, b2Body* tire3, b2Body* tire4);
+	PhysBody* CreateTire(int x, int y, int width, int height, int dir);
 	void UpdateTire(float maxForwardSpeed, float maxBackwardSpeed, Vector2 currentForwardVelocity, float maxDriveForce, b2Body* body);
 
 	void UpdateTireTurn(int direction, float maxSteerAngle, float steerAngle, b2Body* body);

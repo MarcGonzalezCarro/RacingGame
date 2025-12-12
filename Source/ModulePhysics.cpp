@@ -138,7 +138,7 @@ PhysBody* ModulePhysics::CreateRectangle(int x, int y, int width, int height)
 	return pbody;
 }
 
-PhysBody* ModulePhysics::CreateCar(int x, int y, int width, int height, b2Body* tire1, b2Body* tire2, b2Body* tire3, b2Body* tire4)
+PhysBody* ModulePhysics::CreateCar(int x, int y, int width, int height, int dir, b2Body* tire1, b2Body* tire2, b2Body* tire3, b2Body* tire4)
 {
 	PhysBody* pbody = new PhysBody();
 
@@ -146,7 +146,7 @@ PhysBody* ModulePhysics::CreateCar(int x, int y, int width, int height, b2Body* 
 	body.type = b2_dynamicBody;
 	body.gravityScale = 0.0f;
 	body.position.Set(PIXEL_TO_METERS(x), PIXEL_TO_METERS(y)); // posición inicial del cuerpo
-
+	body.angle = (90 * dir) * DEG2RAD;
 	b2Body* b = world->CreateBody(&body);
 
 	pbody->body = b;
@@ -170,7 +170,7 @@ PhysBody* ModulePhysics::CreateCar(int x, int y, int width, int height, b2Body* 
 		vertices[i].x = PIXEL_TO_METERS(norm[i].x * width);
 		vertices[i].y = PIXEL_TO_METERS(norm[i].y * height);
 	}
-
+	
 	b2PolygonShape polygonShape;
 	polygonShape.Set(vertices, 8);
 	b2Fixture* fixture = b->CreateFixture(&polygonShape, 0.1f);
@@ -214,16 +214,18 @@ PhysBody* ModulePhysics::CreateCar(int x, int y, int width, int height, b2Body* 
 	jointDef.upperAngle = 0.5f;
 	world->CreateJoint(&jointDef);
 
+	
 	return pbody;
 }
 
-PhysBody* ModulePhysics::CreateTire(int x, int y, int width, int height)
+PhysBody* ModulePhysics::CreateTire(int x, int y, int width, int height, int dir)
 {
 	PhysBody* tire = new PhysBody();
 
     b2BodyDef body;
     body.type = b2_dynamicBody;
 	body.gravityScale = 0.0f;
+	body.angle = (90 * dir) * DEG2RAD;
     body.position.Set(PIXEL_TO_METERS(x), PIXEL_TO_METERS(y));
     body.userData.pointer = reinterpret_cast<uintptr_t>(tire);
 
