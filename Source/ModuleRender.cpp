@@ -68,13 +68,11 @@ bool ModuleRender::Draw(Texture2D texture, int x, int y, const Rectangle* sectio
 {
 	bool ret = true;
 
-    float scale = 1.0f;
+    float scale = 0.2f;
 
     // Rectángulo de origen
-    Rectangle src = { 0.f, 0.f, (float)texture.width, (float)texture.height };
-    if (section != nullptr)
-        src = *section;
-
+    Rectangle src = { 0.f, 0.f, (float)texture.height, (float)texture.width };
+   
     // Rectángulo de destino: posición del sprite (coincide con el cuerpo)
     Rectangle dest = {
         (float)(x) + camera.x, 
@@ -91,32 +89,6 @@ bool ModuleRender::Draw(Texture2D texture, int x, int y, const Rectangle* sectio
 	return ret;
 }
 
-bool ModuleRender::DrawCar(Texture2D texture, int x, int y, const Rectangle* section, double angle, int pivot_x, int pivot_y) const
-{
-    bool ret = true;
-
-    float scale = 1.0f;
-
-    // Rectángulo de origen
-    Rectangle src = { 0.f, 0.f, (float)texture.width, (float)texture.height };
-    if (section != nullptr)
-        src = *section;
-
-    // Rectángulo de destino: posición del sprite (coincide con el cuerpo)
-    Rectangle dest = {
-        (float)(x),
-        (float)(y),
-        src.width * scale,
-        src.height * scale
-    };
-
-    // Pivot: punto de rotación dentro del sprite
-    Vector2 origin = { (float)pivot_x, (float)pivot_y };
-
-    DrawTexturePro(texture, src, dest, origin, (float)angle, WHITE);
-
-    return ret;
-}
 
 bool ModuleRender::DrawText(const char * text, int x, int y, Font font, int spacing, Color tint) const
 {

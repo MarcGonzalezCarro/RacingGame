@@ -42,8 +42,8 @@ public:
 		renderer = render;
 	}
 
-	float maxForwardSpeed = 5.0f;
-	float maxBackwardSpeed = 2.0f;
+	float maxForwardSpeed = 0.5f;
+	float maxBackwardSpeed = 0.1f;
 	float maxDriveForce = 2.0f;
 
 	float steeringAngle = 0.0f;
@@ -86,8 +86,8 @@ public:
 			(float)body->width,
 			(float)body->height
 		};
-
-		renderer->Draw(texture, x, y, &src, rotation, texture.width / 2, texture.height / 2);
+		
+		renderer->Draw(texture, x, y, &src, rotation, body->width, body->height);
 		//DrawTexturePro(texture, src, dest, origin, rotation, WHITE);
 	}
 
@@ -143,9 +143,10 @@ public:
 		};
 		Vector2 origin = {
 			(float)body->width / 2,
-			(float)body->height / 2
+			(float)body->height
 		};
-		renderer->Draw(texture, x, y, &src, (double)rotation, texture.width / 2, texture.height / 2);
+		
+		renderer->Draw(texture, x, y, &src, rotation, body->width / 2, body->height / 2);
 		//DrawTexturePro(texture, src, dest, origin, rotation, WHITE);
 
 	}
@@ -171,6 +172,8 @@ bool ModuleGame::Start()
 	LOG("Loading Intro assets");
 	bool ret = true;
 
+	
+
 	circle = LoadTexture("Assets/wheel.png");
 	box = LoadTexture("Assets/crate.png");
 	rick = LoadTexture("Assets/rick_head.png");
@@ -178,7 +181,7 @@ bool ModuleGame::Start()
 	bonus_fx = App->audio->LoadFx("Assets/bonus.wav");
 
 	sensor = App->physics->CreateRectangleSensor(SCREEN_WIDTH / 2, SCREEN_HEIGHT, SCREEN_WIDTH, 50);
-
+	CreateCar(SCREEN_WIDTH / 2, 200, 200, 400, 1, false);
 	return ret;
 }
 
@@ -190,18 +193,51 @@ bool ModuleGame::CleanUp()
 	return true;
 }
 
-void  ModuleGame::CreateCar(int x, int y, int w, int h, bool playable) {
-	Tire* fl = new Tire(App->renderer,App->physics, x, y, 10, 20, this, box);
-	Tire* fr = new Tire(App->renderer,App->physics, x, y, 10, 20, this, box);
-	Tire* rl = new Tire(App->renderer,App->physics, x, y, 10, 20, this, box);
-	Tire* rr = new Tire(App->renderer,App->physics, x, y, 10, 20, this, box);
+void  ModuleGame::CreateCar(int x, int y, int w, int h, float scale, bool playable) {
+	Tire* fl = new Tire(App->renderer,App->physics, x, y, 10 * scale, 20 * scale, this, box);
+	Tire* fr = new Tire(App->renderer,App->physics, x, y, 10 * scale, 20 * scale, this, box);
+	Tire* rl = new Tire(App->renderer,App->physics, x, y, 10 * scale, 20 * scale, this, box);
+	Tire* rr = new Tire(App->renderer,App->physics, x, y, 10 * scale, 20 * scale, this, box);
 
-	Car* car = new Car(App->renderer,App->physics, x, y, w, h, fl, fr, rl, rr, this, box, true);
+	Car* car = new Car(App->renderer,App->physics, x, y, w * scale, h * scale, fl, fr, rl, rr, this, box, playable);
 	entities.emplace_back(car);
 }
 
-void ModuleGame::CreateRace() {
+void ModuleGame::CreateRace(int x, int y, int w, int h, float scale, bool playable) {
 
+	int posX = 0;
+	int posY = 0;
+
+	for (int i = 0; i < 6; i++) {
+		Tire* fl = new Tire(App->renderer, App->physics, x, y, 10 * scale, 20 * scale, this, box);
+		Tire* fr = new Tire(App->renderer, App->physics, x, y, 10 * scale, 20 * scale, this, box);
+		Tire* rl = new Tire(App->renderer, App->physics, x, y, 10 * scale, 20 * scale, this, box);
+		Tire* rr = new Tire(App->renderer, App->physics, x, y, 10 * scale, 20 * scale, this, box);
+
+		Car* car;
+
+		if (i == 0) {
+			car = new Car(App->renderer, App->physics, x + 0 * METERS_TO_PIXELS(10), y + 0 * METERS_TO_PIXELS(10), w * scale, h * scale, fl, fr, rl, rr, this, box, true);
+		}
+		if (i == 1) {
+			car = new Car(App->renderer, App->physics, x + 0 * METERS_TO_PIXELS(10), y + 1 * METERS_TO_PIXELS(10), w * scale, h * scale, fl, fr, rl, rr, this, box, false);
+		}
+		if (i == 2) {
+			car = new Car(App->renderer, App->physics, x + 1 * METERS_TO_PIXELS(10), y + 0 * METERS_TO_PIXELS(10), w * scale, h * scale, fl, fr, rl, rr, this, box, false);
+		}
+		if (i == 3) {
+			car = new Car(App->renderer, App->physics, x + 1 * METERS_TO_PIXELS(10), y + 1 * METERS_TO_PIXELS(10), w * scale, h * scale, fl, fr, rl, rr, this, box, false);
+		}
+		if (i == 4) {
+			car = new Car(App->renderer, App->physics, x + 2 * METERS_TO_PIXELS(10), y + 0 * METERS_TO_PIXELS(10), w * scale, h * scale, fl, fr, rl, rr, this, box, false);
+		}
+		if (i == 5) {
+			car = new Car(App->renderer, App->physics, x + 2 * METERS_TO_PIXELS(10), y + 1 * METERS_TO_PIXELS(10), w * scale, h * scale, fl, fr, rl, rr, this, box, false);
+		}
+
+		
+		entities.emplace_back(car);
+	}
 }
 
 // Update: draw background
@@ -219,10 +255,18 @@ update_status ModuleGame::Update()
 		entities.emplace_back(new Tire(App->renderer,App->physics, GetMouseX(), GetMouseY(), 5, 10, this, box));
 
 	if (IsKeyPressed(KEY_TWO)) {
-		if (IsKeyPressed(KEY_TWO))
-		{
-			CreateCar(SCREEN_WIDTH/2,SCREEN_HEIGHT/2,50,100,true);
-		}
+		CreateCar(SCREEN_WIDTH/2,SCREEN_HEIGHT/2,50,100, 1.0f,true);
+		
+	}
+	if (IsKeyPressed(KEY_THREE)) {
+		
+		CreateCar(0, 0, 50, 100, 0.5f,false);
+		
+	}
+	if (IsKeyPressed(KEY_FOUR)) {
+
+		CreateRace(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 50, 100, 0.5f, false);
+
 	}
 
 	// Procesar input para cada coche
@@ -231,7 +275,7 @@ update_status ModuleGame::Update()
 		Car* car = dynamic_cast<Car*>(entity);
 		if (!car) continue;
 		if (car->isplayer) {
-
+			
 			int x, y;
 			car->body->GetPhysicPosition(x, y);
 
@@ -264,12 +308,15 @@ update_status ModuleGame::Update()
 				car->frontLeft->direction = 0;
 				car->frontRight->direction = 0;
 			}
-			
-			/*App->renderer->camera.x = x;
-			App->renderer->camera.y = y;*/
+
+			App->renderer->camera.x = SCREEN_WIDTH / 2 - x;
+			App->renderer->camera.y = SCREEN_HEIGHT / 2 - y;
 			
 			car->Update();
 
+		}
+		else {
+			car->Update();
 		}
 	}
 

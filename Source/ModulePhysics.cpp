@@ -26,28 +26,6 @@ bool ModulePhysics::Start()
 	world = new b2World(b2Vec2(GRAVITY_X, -GRAVITY_Y));
 	world->SetContactListener(this);
 
-	// needed to create joints like mouse joint
-	b2BodyDef bd;
-	ground = world->CreateBody(&bd);
-
-	// big static circle as "ground" in the middle of the screen
-	int x = (int)(SCREEN_WIDTH / 2);
-	int y = (int)(SCREEN_HEIGHT / 1.5f);
-	int diameter = SCREEN_WIDTH / 2;
-
-	b2BodyDef body;
-	body.type = b2_staticBody;
-	body.position.Set(PIXEL_TO_METERS(x), PIXEL_TO_METERS(y));
-
-	b2Body* big_ball = world->CreateBody(&body);
-
-	b2CircleShape shape;
-	shape.m_radius = PIXEL_TO_METERS(diameter) * 0.5f;
-
-	b2FixtureDef fixture;
-	fixture.shape = &shape;
-	big_ball->CreateFixture(&fixture);
-
 	return true;
 }
 
@@ -88,6 +66,7 @@ PhysBody* ModulePhysics::CreateCircle(int x, int y, int radius)
 
 	b2BodyDef body;
 	body.type = b2_dynamicBody;
+	body.gravityScale = 0.0f;
 	body.position.Set(PIXEL_TO_METERS(x), PIXEL_TO_METERS(y));
 	body.userData.pointer = reinterpret_cast<uintptr_t>(pbody);
 
@@ -174,15 +153,23 @@ PhysBody* ModulePhysics::CreateCar(int x, int y, int width, int height, b2Body* 
 	pbody->width = width;
 	pbody->height = height;
 
+	b2Vec2 norm[8] = {
+		{  0.15f,  0.10f },
+		{  0.30f,  0.00f },
+		{  0.28f, -0.25f },
+		{  0.10f, -0.80f },
+		{ -0.10f, -0.80f },
+		{ -0.28f, -0.25f },
+		{ -0.30f,  0.00f },
+		{ -0.15f,  0.10f }
+	};
+
 	b2Vec2 vertices[8];
-	vertices[0].Set(1.5f / 4.0f, -0 / 4.0f);
-	vertices[1].Set(3.0f / 4.0f, -2.5f / 4.0f);
-	vertices[2].Set(2.8f / 4.0f, -5.5f / 4.0f);
-	vertices[3].Set(1.0f / 4.0f, -10.0f / 4.0f);
-	vertices[4].Set(-1.0f / 4.0f, -10.0f / 4.0f);
-	vertices[5].Set(-2.8f / 4.0f, -5.5f / 4.0f);
-	vertices[6].Set(-3.0f / 4.0f, -2.5f / 4.0f);
-	vertices[7].Set(-1.5f / 4.0f, -0 / 4.0f);
+	for (int i = 0; i < 8; ++i)
+	{
+		vertices[i].x = PIXEL_TO_METERS(norm[i].x * width);
+		vertices[i].y = PIXEL_TO_METERS(norm[i].y * height);
+	}
 
 	b2PolygonShape polygonShape;
 	polygonShape.Set(vertices, 8);
@@ -200,28 +187,28 @@ PhysBody* ModulePhysics::CreateCar(int x, int y, int width, int height, b2Body* 
 
 	//BackLeft
 	jointDef.bodyB = tire1;
-	jointDef.localAnchorA.Set(PIXEL_TO_METERS(-30), PIXEL_TO_METERS(-120.0f));
+	jointDef.localAnchorA.Set(PIXEL_TO_METERS(-width * 0.30f),PIXEL_TO_METERS(-height * 0.80f));
 	jointDef.enableLimit = true;
 	jointDef.lowerAngle = 0;
 	jointDef.upperAngle = 0;
 	world->CreateJoint(&jointDef);
 	//BackRight
 	jointDef.bodyB = tire2;
-	jointDef.localAnchorA.Set(PIXEL_TO_METERS(30), PIXEL_TO_METERS(-120.0f));
+	jointDef.localAnchorA.Set(PIXEL_TO_METERS(width * 0.30f), PIXEL_TO_METERS(-height * 0.80f));
 	jointDef.enableLimit = true;
 	jointDef.lowerAngle = 0;
 	jointDef.upperAngle = 0;
 	world->CreateJoint(&jointDef);
 	//FrontLeft
 	jointDef.bodyB = tire3;
-	jointDef.localAnchorA.Set(PIXEL_TO_METERS(-30), PIXEL_TO_METERS(2.0f));
+	jointDef.localAnchorA.Set(PIXEL_TO_METERS(-width * 0.30f),PIXEL_TO_METERS(height * 0.05f));
 	jointDef.enableLimit = true;
 	jointDef.lowerAngle = -0.5f;   // ≈ -30º
 	jointDef.upperAngle = 0.5f;   // ≈ +30º
 	world->CreateJoint(&jointDef);
 	//FrontRight
 	jointDef.bodyB = tire4;
-	jointDef.localAnchorA.Set(PIXEL_TO_METERS(30), PIXEL_TO_METERS(2.0f));
+	jointDef.localAnchorA.Set(PIXEL_TO_METERS(width * 0.30f),PIXEL_TO_METERS(height * 0.05f));
 	jointDef.enableLimit = true;
 	jointDef.lowerAngle = -0.5f;
 	jointDef.upperAngle = 0.5f;
@@ -476,13 +463,13 @@ update_status ModulePhysics::PostUpdate()
 				{
 					v = b->GetWorldPoint(polygonShape->m_vertices[i]);
 					if (i > 0)
-						DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y), METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), RED);
+						DrawLine(METERS_TO_PIXELS(prev.x) + App->renderer->camera.x, METERS_TO_PIXELS(prev.y) + App->renderer->camera.y, METERS_TO_PIXELS(v.x) + App->renderer->camera.x, METERS_TO_PIXELS(v.y) + App->renderer->camera.y, RED);
 
 					prev = v;
 				}
 
 				v = b->GetWorldPoint(polygonShape->m_vertices[0]);
-				DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y), METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), RED);
+				DrawLine(METERS_TO_PIXELS(prev.x) + App->renderer->camera.x, METERS_TO_PIXELS(prev.y) + App->renderer->camera.y, METERS_TO_PIXELS(v.x) + App->renderer->camera.x, METERS_TO_PIXELS(v.y) + App->renderer->camera.y, RED);
 			}
 			break;
 
