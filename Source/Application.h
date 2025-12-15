@@ -10,6 +10,8 @@ class ModuleRender;
 class ModuleAudio;
 class ModulePhysics;
 class ModuleGame;
+class ModuleState;
+class ModuleUI;
 
 class Application
 {
@@ -20,6 +22,8 @@ public:
 	ModuleAudio* audio;
 	ModulePhysics* physics;
 	ModuleGame* scene_intro;
+	ModuleState* state;
+	ModuleUI* ui;
 	float deltaTime = 0.0f;
 private:
 

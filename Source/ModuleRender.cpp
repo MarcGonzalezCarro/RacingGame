@@ -2,6 +2,7 @@
 #include "Application.h"
 #include "ModuleWindow.h"
 #include "ModuleRender.h"
+#include "ModuleState.h"
 #include <math.h>
 
 ModuleRender::ModuleRender(Application* app, bool start_enabled) : Module(app, start_enabled)
@@ -18,6 +19,8 @@ bool ModuleRender::Init()
 {
 	LOG("Creating Renderer context");
 	bool ret = true;
+
+    fuente = LoadFont("Assets/Fonts/Racesky.otf");
 
 	return ret;
 }
@@ -99,4 +102,23 @@ bool ModuleRender::DrawText(const char * text, int x, int y, Font font, int spac
     DrawTextEx(font, text, position, (float)font.baseSize, (float)spacing, tint);
 
     return ret;
+}
+
+
+void ModuleRender::DrawUIButton(int x, int y, int w, int h, const char* text, bool hover)
+{
+    Color bg = hover ? DARKGRAY : GRAY;
+
+    DrawRectangle(x, y, w, h, bg);
+    DrawRectangleLines(x, y, w, h, BLACK);
+
+    int textWidth = MeasureText(text, 20);
+    DrawText(
+        text,
+        x + w / 2 - textWidth / 2,
+        y + h / 2 - 10,
+        fuente,
+        20, 
+        BLACK
+    );
 }

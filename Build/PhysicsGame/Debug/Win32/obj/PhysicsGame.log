@@ -1,20 +1,2 @@
-﻿  ModuleGame.cpp
-C:\Users\solda\OnedriveMurkano\OneDrive\Escritorio\Projecte1\RacingGame\Source\ModuleGame.cpp(78,34): warning C4838: la conversión de 'int' en 'float' requiere una conversión de restricción
-C:\Users\solda\OnedriveMurkano\OneDrive\Escritorio\Projecte1\RacingGame\Source\ModuleGame.cpp(78,34): warning C4244: 'inicializando': conversión de 'int' a 'float'; posible pérdida de datos
-C:\Users\solda\OnedriveMurkano\OneDrive\Escritorio\Projecte1\RacingGame\Source\ModuleGame.cpp(78,49): warning C4838: la conversión de 'int' en 'float' requiere una conversión de restricción
-C:\Users\solda\OnedriveMurkano\OneDrive\Escritorio\Projecte1\RacingGame\Source\ModuleGame.cpp(78,49): warning C4244: 'inicializando': conversión de 'int' a 'float'; posible pérdida de datos
-C:\Users\solda\OnedriveMurkano\OneDrive\Escritorio\Projecte1\RacingGame\Source\ModuleGame.cpp(197,71): warning C4244: 'argumento': conversión de 'float' a 'int'; posible pérdida de datos
-C:\Users\solda\OnedriveMurkano\OneDrive\Escritorio\Projecte1\RacingGame\Source\ModuleGame.cpp(197,59): warning C4244: 'argumento': conversión de 'float' a 'int'; posible pérdida de datos
-C:\Users\solda\OnedriveMurkano\OneDrive\Escritorio\Projecte1\RacingGame\Source\ModuleGame.cpp(198,71): warning C4244: 'argumento': conversión de 'float' a 'int'; posible pérdida de datos
-C:\Users\solda\OnedriveMurkano\OneDrive\Escritorio\Projecte1\RacingGame\Source\ModuleGame.cpp(198,59): warning C4244: 'argumento': conversión de 'float' a 'int'; posible pérdida de datos
-C:\Users\solda\OnedriveMurkano\OneDrive\Escritorio\Projecte1\RacingGame\Source\ModuleGame.cpp(199,71): warning C4244: 'argumento': conversión de 'float' a 'int'; posible pérdida de datos
-C:\Users\solda\OnedriveMurkano\OneDrive\Escritorio\Projecte1\RacingGame\Source\ModuleGame.cpp(199,59): warning C4244: 'argumento': conversión de 'float' a 'int'; posible pérdida de datos
-C:\Users\solda\OnedriveMurkano\OneDrive\Escritorio\Projecte1\RacingGame\Source\ModuleGame.cpp(200,71): warning C4244: 'argumento': conversión de 'float' a 'int'; posible pérdida de datos
-C:\Users\solda\OnedriveMurkano\OneDrive\Escritorio\Projecte1\RacingGame\Source\ModuleGame.cpp(200,59): warning C4244: 'argumento': conversión de 'float' a 'int'; posible pérdida de datos
-C:\Users\solda\OnedriveMurkano\OneDrive\Escritorio\Projecte1\RacingGame\Source\ModuleGame.cpp(202,68): warning C4244: 'argumento': conversión de 'float' a 'int'; posible pérdida de datos
-C:\Users\solda\OnedriveMurkano\OneDrive\Escritorio\Projecte1\RacingGame\Source\ModuleGame.cpp(202,57): warning C4244: 'argumento': conversión de 'float' a 'int'; posible pérdida de datos
-C:\Users\solda\OnedriveMurkano\OneDrive\Escritorio\Projecte1\RacingGame\Source\ModuleGame.cpp(286,47): warning C4244: '=': conversión de 'int' a 'float'; posible pérdida de datos
-C:\Users\solda\OnedriveMurkano\OneDrive\Escritorio\Projecte1\RacingGame\Source\ModuleGame.cpp(287,48): warning C4244: '=': conversión de 'int' a 'float'; posible pérdida de datos
-  PhysicsGame.vcxproj -> C:\Users\solda\OnedriveMurkano\OneDrive\Escritorio\Projecte1\RacingGame\Build\PhysicsGame\Debug\Win32\PhysicsGame.exe
-  "pwsh.exe" no se reconoce como un comando interno o externo,
-  programa o archivo por lotes ejecutable.
+﻿  ModuleRender.cpp
+  PhysicsGame.vcxproj -> C:\Users\marcgc4\Documents\GitHub\RacingGame\Build\PhysicsGame\Debug\Win32\PhysicsGame.exe

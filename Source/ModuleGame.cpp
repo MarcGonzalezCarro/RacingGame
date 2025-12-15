@@ -179,7 +179,6 @@ bool ModuleGame::Start()
 	rick = LoadTexture("Assets/rick_head.png");
 
 	bonus_fx = App->audio->LoadFx("Assets/bonus.wav");
-
 	sensor = App->physics->CreateRectangleSensor(SCREEN_WIDTH / 2, SCREEN_HEIGHT, SCREEN_WIDTH, 50);
 	CreateCar(SCREEN_WIDTH / 2, 200, 200, 400, 1, 0, false);
 	return ret;
