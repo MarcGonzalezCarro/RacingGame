@@ -2,6 +2,7 @@
 #include "Application.h"
 #include "ModuleWindow.h"
 #include "ModuleState.h"
+#include "ModuleGame.h"
 #include <math.h>
 
 ModuleState::ModuleState(Application* app, bool start_enabled) : Module(app, start_enabled)
@@ -119,14 +120,14 @@ void ModuleState::OnExitMenu()
 void ModuleState::OnEnterRace()
 {
 	LOG("STATE ? RACE");
-
+	App->scene_intro->CreateRace(800,1750,50,100,1.0f,3);
 	
 }
 
 void ModuleState::OnExitRace()
 {
 	LOG("EXIT RACE");
-
+	App->scene_intro->onRace = false;
 }
 
 void ModuleState::OnEnterResults()

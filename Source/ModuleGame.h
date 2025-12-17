@@ -26,6 +26,8 @@ public:
 	void CreateRace(int x, int y, int w, int h, float scale, int dir);
 	void OnCollision(PhysBody* bodyA, PhysBody* bodyB);
 
+	void DebugClickWaypoint();
+
 public:
 
 	std::vector<PhysicEntity*> entities;
@@ -36,6 +38,9 @@ public:
 	Texture2D circle;
 	Texture2D box;
 	Texture2D rick;
+	Texture2D map;
+
+	bool onRace = false;
 
 	uint32 bonus_fx;
 
@@ -43,4 +48,5 @@ public:
 	bool ray_on;
 
 	std::set<std::set<PhysicEntity*>> collidingEntities;
+	
 };

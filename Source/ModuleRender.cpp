@@ -67,21 +67,21 @@ void ModuleRender::SetBackgroundColor(Color color)
 }
 
 // Draw to screen
-bool ModuleRender::Draw(Texture2D texture, int x, int y, const Rectangle* section, double angle, int pivot_x, int pivot_y) const
+bool ModuleRender::Draw(Texture2D texture, int x, int y, const Rectangle* section, double angle, int pivot_x, int pivot_y, float scale) const
 {
 	bool ret = true;
 
-    float scale = 0.2f;
+    float scaled = scale;
 
     // Rectángulo de origen
-    Rectangle src = { 0.f, 0.f, (float)texture.height, (float)texture.width };
+    Rectangle src = { 0.f, 0.f, (float)texture.width, (float)texture.height };
    
     // Rectángulo de destino: posición del sprite (coincide con el cuerpo)
     Rectangle dest = {
         (float)(x) + camera.x, 
         (float)(y) + camera.y,
-        src.width * scale,
-        src.height * scale
+        src.width * scaled,
+        src.height * scaled
     };
 
     // Pivot: punto de rotación dentro del sprite

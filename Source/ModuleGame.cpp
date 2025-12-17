@@ -5,6 +5,12 @@
 #include "ModuleAudio.h"
 #include "ModulePhysics.h"
 
+struct Waypoint
+{
+	int x;
+	int y;
+};
+std::vector<Waypoint> waypoints;
 class PhysicEntity
 {
 protected:
@@ -42,12 +48,12 @@ public:
 		renderer = render;
 	}
 
-	float maxForwardSpeed = 0.25f;  
-	float maxBackwardSpeed = 0.05f;  
-	float maxDriveForce = 1.0f;
+	float maxForwardSpeed = 0.25f * 0.5f;  
+	float maxBackwardSpeed = 0.05f * 0.5f;
+	float maxDriveForce = 1.0f * 0.5f;
 
 	float steeringAngle = 0.0f;
-	float maxSteeringAngle = 10.0f;
+	float maxSteeringAngle = 5.0f;
 	float steeringSpeed = 0.05f;
 
 	float maxLateralImpulse = 2.5f;
@@ -87,7 +93,7 @@ public:
 			(float)body->height
 		};
 		
-		renderer->Draw(texture, x, y, &src, rotation, body->width, body->height);
+		renderer->Draw(texture, x, y, &src, rotation, body->width, body->height, 0.2f);
 		//DrawTexturePro(texture, src, dest, origin, rotation, WHITE);
 	}
 
@@ -106,6 +112,12 @@ public:
 	Tire* rearRight;
 	bool isplayer;
 	ModuleRender* renderer;
+
+	int currentWaypoint = 0;
+	float waypointRadius = 60.0f;
+
+	Vector2 waypointOffset = { 0.0f, 0.0f };
+	float maxOffset = 2.0f;
 
 	Car(ModuleRender* render, ModulePhysics* physics, int x, int y, int w, int h, int dir,
 		Tire* fl, Tire* fr, Tire* rl, Tire* rr,
@@ -146,11 +158,67 @@ public:
 			(float)body->height
 		};
 		
-		renderer->Draw(texture, x, y, &src, rotation, body->width / 2, body->height / 2);
+		renderer->Draw(texture, x, y, &src, rotation, body->width / 2, body->height / 2, 0.2f);
 		//DrawTexturePro(texture, src, dest, origin, rotation, WHITE);
 
 	}
 
+	void GoToWaypoint(const Waypoint& wp)
+	{
+		int x, y;
+		body->GetPhysicPosition(x, y);
+
+		float targetX = wp.x + waypointOffset.x;
+		float targetY = wp.y + waypointOffset.y;
+
+		float dx = targetX - x;
+		float dy = targetY - y;
+
+		float distance = sqrtf(dx * dx + dy * dy);
+
+		if (distance > 0.0f)
+		{
+			dx /= distance;
+			dy /= distance;
+		}
+
+		frontLeft->speed.y = frontLeft->maxForwardSpeed;
+		frontRight->speed.y = frontRight->maxForwardSpeed;
+
+		float carAngle = body->GetRotation();
+		float targetAngle = atan2f(dy, dx) + b2_pi / 2.0f;
+
+		float angleDiff = targetAngle - carAngle;
+		while (angleDiff > b2_pi) angleDiff -= 2 * b2_pi;
+		while (angleDiff < -b2_pi) angleDiff += 2 * b2_pi;
+
+		if (angleDiff > 0.15f)
+		{
+			frontLeft->direction = -1;
+			frontRight->direction = -1;
+		}
+		else if (angleDiff < -0.15f)
+		{
+			frontLeft->direction = 1;
+			frontRight->direction = 1;
+		}
+		else
+		{
+			frontLeft->direction = 0;
+			frontRight->direction = 0;
+		}
+	}
+
+	bool HasReachedWaypoint(const Waypoint& wp)
+	{
+		int x, y;
+		body->GetPhysicPosition(x, y);
+
+		float dx = wp.x - x;
+		float dy = wp.y - y;
+
+		return (dx * dx + dy * dy) <= waypointRadius * waypointRadius;
+	}
 private:
 	Texture2D texture;
 
@@ -177,10 +245,27 @@ bool ModuleGame::Start()
 	circle = LoadTexture("Assets/wheel.png");
 	box = LoadTexture("Assets/crate.png");
 	rick = LoadTexture("Assets/rick_head.png");
+	map = LoadTexture("Assets/MapaTemporal.png");
 
 	bonus_fx = App->audio->LoadFx("Assets/bonus.wav");
-	sensor = App->physics->CreateRectangleSensor(SCREEN_WIDTH / 2, SCREEN_HEIGHT, SCREEN_WIDTH, 50);
-	CreateCar(SCREEN_WIDTH / 2, 200, 200, 400, 1, 0, false);
+	
+
+	waypoints.push_back({ 203, 1740 });
+	waypoints.push_back({ 159, 967 });
+	waypoints.push_back({ 260, 730 });
+	waypoints.push_back({ 158, 429 });
+	waypoints.push_back({ 201, 195 });
+	waypoints.push_back({ 1856, 176 });
+	waypoints.push_back({ 1907, 466 });
+	waypoints.push_back({ 856, 507 });
+	waypoints.push_back({ 846, 796 });
+	waypoints.push_back({ 1623, 862 });
+	waypoints.push_back({ 1692, 1449 });
+	waypoints.push_back({ 1922, 1649 });
+	waypoints.push_back({ 1666, 1774 });
+	
+
+
 	return ret;
 }
 
@@ -207,89 +292,117 @@ void ModuleGame::CreateRace(int x, int y, int w, int h, float scale, int dir) {
 	for (int i = 0; i < 10; ++i)
 	{
 		int ox = (i / 2) * METERS_TO_PIXELS(3);
-		int oy = (i % 2) * METERS_TO_PIXELS(3);
+		int oy = (i % 2) * METERS_TO_PIXELS(2);
 
 		CreateCar(x + ox, y + oy, w, h, scale, dir, i == 0);
 	}
+
+	onRace = true;
 }
 
 // Update: draw background
 update_status ModuleGame::Update()
 {
-	// Activar rayo con espacio
-	if (IsKeyPressed(KEY_SPACE))
-	{
-		ray_on = !ray_on;
-		ray.x = GetMouseX();
-		ray.y = GetMouseY();
-	}
-	// Crear entidades
-	if (IsKeyPressed(KEY_ONE))
-		entities.emplace_back(new Tire(App->renderer,App->physics, GetMouseX(), GetMouseY(), 5, 10, 1, this, box));
+	if (onRace) {
 
-	if (IsKeyPressed(KEY_TWO)) {
-		CreateCar(SCREEN_WIDTH/2,SCREEN_HEIGHT/2,50,100, 1.0f,0,true);
-		
-	}
-	if (IsKeyPressed(KEY_THREE)) {
-		
-		CreateCar(0, 0, 50, 100, 0.5f,0,false);
-		
-	}
-	if (IsKeyPressed(KEY_FOUR)) {
+		DebugClickWaypoint();
 
-		CreateRace(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 50, 100, 1.0f, 3);
+		App->renderer->Draw(map,0,0,0,0,0,0,3);
 
-	}
+		// Activar rayo con espacio
+		if (IsKeyPressed(KEY_SPACE))
+		{
+			ray_on = !ray_on;
+			ray.x = GetMouseX();
+			ray.y = GetMouseY();
+		}
+		// Crear entidades
+		if (IsKeyPressed(KEY_ONE))
+			entities.emplace_back(new Tire(App->renderer, App->physics, GetMouseX(), GetMouseY(), 5, 10, 1, this, box));
 
-	// Procesar input para cada coche
-	for (PhysicEntity* entity : entities)
-	{
-		Car* car = dynamic_cast<Car*>(entity);
-		if (!car) continue;
-		if (car->isplayer) {
-			
-			int x, y;
-			car->body->GetPhysicPosition(x, y);
+		if (IsKeyPressed(KEY_TWO)) {
+			CreateCar(GetMouseX() - App->renderer->camera.x, GetMouseY() - App->renderer->camera.y, 50, 100, 1.0f, 0, false);
+			printf("Coloco coche en: %f, %f\n", GetMouseX() - App->renderer->camera.x, GetMouseY() - App->renderer->camera.y);
+		}
+		if (IsKeyPressed(KEY_THREE)) {
 
-			
-
-			// adelante
-			if (IsKeyDown(KEY_W)) {
-				car->frontLeft->speed.y = car->frontLeft->maxForwardSpeed;
-				car->frontRight->speed.y = car->frontRight->maxForwardSpeed;
-			}
-			else if (IsKeyDown(KEY_S)) {
-				car->frontLeft->speed.y = -car->frontLeft->maxBackwardSpeed;
-				car->frontRight->speed.y = -car->frontRight->maxBackwardSpeed;
-			}
-			else {
-				car->frontLeft->speed.y = 0;
-				car->frontRight->speed.y = 0;
-			}
-
-			// giro
-			if (IsKeyDown(KEY_A)) {
-				car->frontLeft->direction = 1;
-				car->frontRight->direction = 1;
-			}
-			else if (IsKeyDown(KEY_D)) {
-				car->frontLeft->direction = -1;
-				car->frontRight->direction = -1;
-			}
-			else {
-				car->frontLeft->direction = 0;
-				car->frontRight->direction = 0;
-			}
-
-			App->renderer->camera.x = SCREEN_WIDTH / 2 - x;
-			App->renderer->camera.y = SCREEN_HEIGHT / 2 - y;
-			
-			car->Update();
+			CreateCar(0, 0, 50, 100, 0.5f, 0, false);
 
 		}
-		else {
-			car->Update();
+		if (IsKeyPressed(KEY_FOUR)) {
+
+			CreateRace(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 50, 100, 1.0f, 3);
+
+		}
+
+		// Procesar input para cada coche
+		for (PhysicEntity* entity : entities)
+		{
+			Car* car = dynamic_cast<Car*>(entity);
+			if (!car) continue;
+			if (car->isplayer) {
+
+				int x, y;
+				car->body->GetPhysicPosition(x, y);
+
+
+
+				// adelante
+				if (IsKeyDown(KEY_W)) {
+					car->frontLeft->speed.y = car->frontLeft->maxForwardSpeed;
+					car->frontRight->speed.y = car->frontRight->maxForwardSpeed;
+				}
+				else if (IsKeyDown(KEY_S)) {
+					car->frontLeft->speed.y = -car->frontLeft->maxBackwardSpeed;
+					car->frontRight->speed.y = -car->frontRight->maxBackwardSpeed;
+				}
+				else {
+					car->frontLeft->speed.y = 0;
+					car->frontRight->speed.y = 0;
+				}
+
+				// giro
+				if (IsKeyDown(KEY_A)) {
+					car->frontLeft->direction = 1;
+					car->frontRight->direction = 1;
+				}
+				else if (IsKeyDown(KEY_D)) {
+					car->frontLeft->direction = -1;
+					car->frontRight->direction = -1;
+				}
+				else {
+					car->frontLeft->direction = 0;
+					car->frontRight->direction = 0;
+				}
+
+				App->renderer->camera.x = SCREEN_WIDTH / 2 - x;
+				App->renderer->camera.y = SCREEN_HEIGHT / 2 - y;
+
+				car->Update();
+
+			}
+			else {
+
+				if (car->currentWaypoint < waypoints.size())
+				{
+					Waypoint& wp = waypoints[car->currentWaypoint];
+
+					car->GoToWaypoint(wp);
+
+					if (car->HasReachedWaypoint(wp))
+					{
+						car->currentWaypoint++;
+
+						// Offset aleatorio para el siguiente punto
+						car->waypointOffset.x = GetRandomValue(-car->maxOffset, car->maxOffset);
+						car->waypointOffset.y = GetRandomValue(-car->maxOffset, car->maxOffset);
+
+						if (car->currentWaypoint >= waypoints.size())
+							car->currentWaypoint = 0;
+					}
+				}
+				car->Update();
+			}
 		}
 	}
 
@@ -348,4 +461,26 @@ void ModuleGame::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 	}
 
 
+}
+
+void ModuleGame::DebugClickWaypoint()
+{
+	if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+	{
+		// Mouse en pantalla
+		int mouseX = GetMouseX();
+		int mouseY = GetMouseY();
+
+		// Convertir a coordenadas de mundo (IMPORTANTE)
+		int worldX = mouseX - App->renderer->camera.x;
+		int worldY = mouseY - App->renderer->camera.y;
+
+		printf("Waypoint clicked -> X: %d, Y: %d\n", worldX, worldY);
+
+		// Opcional: guardarlo directamente
+		waypoints.push_back({ worldX, worldY });
+
+		// Feedback visual
+		DrawCircle(worldX, worldY, 6, RED);
+	}
 }
