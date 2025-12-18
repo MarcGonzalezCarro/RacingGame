@@ -2,7 +2,7 @@
 #include "Application.h"
 #include "ModuleRender.h"
 #include "ModulePhysics.h"
-
+#include "ModuleGame.h"
 #include "p2Point.h"
 
 #include <math.h>
@@ -441,77 +441,78 @@ update_status ModulePhysics::PostUpdate()
 
 	// Bonus code: this will iterate all objects in the world and draw the circles
 	// You need to provide your own macro to translate meters to pixels
-	for (b2Body* b = world->GetBodyList(); b; b = b->GetNext())
-	{
-		for (b2Fixture* f = b->GetFixtureList(); f; f = f->GetNext())
+	if(App->scene_intro->debug){
+		for (b2Body* b = world->GetBodyList(); b; b = b->GetNext())
 		{
-			switch (f->GetType())
+			for (b2Fixture* f = b->GetFixtureList(); f; f = f->GetNext())
 			{
-				// Draw circles ------------------------------------------------
-			case b2Shape::e_circle:
-			{
-				b2CircleShape* shape = (b2CircleShape*)f->GetShape();
-				b2Vec2 pos = f->GetBody()->GetPosition();
-
-				DrawCircle(METERS_TO_PIXELS(pos.x), METERS_TO_PIXELS(pos.y), (float)METERS_TO_PIXELS(shape->m_radius), Color{ 0, 0, 0, 128 });
-			}
-			break;
-
-			// Draw polygons ------------------------------------------------
-			case b2Shape::e_polygon:
-			{
-				b2PolygonShape* polygonShape = (b2PolygonShape*)f->GetShape();
-				int32 count = polygonShape->m_count;
-				b2Vec2 prev, v;
-
-				for (int32 i = 0; i < count; ++i)
+				switch (f->GetType())
 				{
-					v = b->GetWorldPoint(polygonShape->m_vertices[i]);
-					if (i > 0)
-						DrawLine(METERS_TO_PIXELS(prev.x) + App->renderer->camera.x, METERS_TO_PIXELS(prev.y) + App->renderer->camera.y, METERS_TO_PIXELS(v.x) + App->renderer->camera.x, METERS_TO_PIXELS(v.y) + App->renderer->camera.y, RED);
-
-					prev = v;
-				}
-
-				v = b->GetWorldPoint(polygonShape->m_vertices[0]);
-				DrawLine(METERS_TO_PIXELS(prev.x) + App->renderer->camera.x, METERS_TO_PIXELS(prev.y) + App->renderer->camera.y, METERS_TO_PIXELS(v.x) + App->renderer->camera.x, METERS_TO_PIXELS(v.y) + App->renderer->camera.y, RED);
-			}
-			break;
-
-			// Draw chains contour -------------------------------------------
-			case b2Shape::e_chain:
-			{
-				b2ChainShape* shape = (b2ChainShape*)f->GetShape();
-				b2Vec2 prev, v;
-
-				for (int32 i = 0; i < shape->m_count; ++i)
+					// Draw circles ------------------------------------------------
+				case b2Shape::e_circle:
 				{
-					v = b->GetWorldPoint(shape->m_vertices[i]);
-					if (i > 0)
-						DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y), METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), GREEN);
-					prev = v;
+					b2CircleShape* shape = (b2CircleShape*)f->GetShape();
+					b2Vec2 pos = f->GetBody()->GetPosition();
+
+					DrawCircle(METERS_TO_PIXELS(pos.x), METERS_TO_PIXELS(pos.y), (float)METERS_TO_PIXELS(shape->m_radius), Color{ 0, 0, 0, 128 });
 				}
+				break;
 
-				v = b->GetWorldPoint(shape->m_vertices[0]);
-				DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y), METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), GREEN);
-			}
-			break;
+				// Draw polygons ------------------------------------------------
+				case b2Shape::e_polygon:
+				{
+					b2PolygonShape* polygonShape = (b2PolygonShape*)f->GetShape();
+					int32 count = polygonShape->m_count;
+					b2Vec2 prev, v;
 
-			// Draw a single segment(edge) ----------------------------------
-			case b2Shape::e_edge:
-			{
-				b2EdgeShape* shape = (b2EdgeShape*)f->GetShape();
-				b2Vec2 v1, v2;
+					for (int32 i = 0; i < count; ++i)
+					{
+						v = b->GetWorldPoint(polygonShape->m_vertices[i]);
+						if (i > 0)
+							DrawLine(METERS_TO_PIXELS(prev.x) + App->renderer->camera.x, METERS_TO_PIXELS(prev.y) + App->renderer->camera.y, METERS_TO_PIXELS(v.x) + App->renderer->camera.x, METERS_TO_PIXELS(v.y) + App->renderer->camera.y, RED);
 
-				v1 = b->GetWorldPoint(shape->m_vertex0);
-				v1 = b->GetWorldPoint(shape->m_vertex1);
-				DrawLine(METERS_TO_PIXELS(v1.x), METERS_TO_PIXELS(v1.y), METERS_TO_PIXELS(v2.x), METERS_TO_PIXELS(v2.y), BLUE);
-			}
-			break;
+						prev = v;
+					}
+
+					v = b->GetWorldPoint(polygonShape->m_vertices[0]);
+					DrawLine(METERS_TO_PIXELS(prev.x) + App->renderer->camera.x, METERS_TO_PIXELS(prev.y) + App->renderer->camera.y, METERS_TO_PIXELS(v.x) + App->renderer->camera.x, METERS_TO_PIXELS(v.y) + App->renderer->camera.y, RED);
+				}
+				break;
+
+				// Draw chains contour -------------------------------------------
+				case b2Shape::e_chain:
+				{
+					b2ChainShape* shape = (b2ChainShape*)f->GetShape();
+					b2Vec2 prev, v;
+
+					for (int32 i = 0; i < shape->m_count; ++i)
+					{
+						v = b->GetWorldPoint(shape->m_vertices[i]);
+						if (i > 0)
+							DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y), METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), GREEN);
+						prev = v;
+					}
+
+					v = b->GetWorldPoint(shape->m_vertices[0]);
+					DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y), METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), GREEN);
+				}
+				break;
+
+				// Draw a single segment(edge) ----------------------------------
+				case b2Shape::e_edge:
+				{
+					b2EdgeShape* shape = (b2EdgeShape*)f->GetShape();
+					b2Vec2 v1, v2;
+
+					v1 = b->GetWorldPoint(shape->m_vertex0);
+					v1 = b->GetWorldPoint(shape->m_vertex1);
+					DrawLine(METERS_TO_PIXELS(v1.x), METERS_TO_PIXELS(v1.y), METERS_TO_PIXELS(v2.x), METERS_TO_PIXELS(v2.y), BLUE);
+				}
+				break;
+				}
 			}
 		}
 	}
-
 	return UPDATE_CONTINUE;
 }
 

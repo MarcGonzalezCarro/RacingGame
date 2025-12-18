@@ -181,15 +181,15 @@ public:
 		Rectangle dest = {
 			(float)x,
 			(float)y,
-			(float)body->width,
-			(float)body->height
+			(float)body->width * 2,
+			(float)body->height * 2
 		};
 		Vector2 origin = {
-			(float)body->width / 2,
+			(float)body->width - 15,
 			(float)body->height
 		};
 		
-		renderer->Draw(texture, x, y, &src, rotation, body->width / 2, body->height / 2, 0.2f);
+		renderer->Draw(texture, x, y, &src, rotation, origin.x, origin.y, 0.2f);
 		//DrawTexturePro(texture, src, dest, origin, rotation, WHITE);
 
 	}
@@ -268,6 +268,9 @@ public:
 			if (currentWaypoint >= waypoints.size()) {
 				currentWaypoint = 0;
 				currentLap++;
+				if (id == 0) {
+					phys->App->audio->PlayFx(phys->App->scene_intro->lap_fx);
+				}
 			}
 		}
 	}
@@ -298,9 +301,12 @@ bool ModuleGame::Start()
 	box = LoadTexture("Assets/crate.png");
 	rick = LoadTexture("Assets/rick_head.png");
 	map = LoadTexture("Assets/MapaTemporal.png");
+	wheel = LoadTexture("Assets/Rueda.png");
+	carT = LoadTexture("Assets/Car.png");
 
 	bonus_fx = App->audio->LoadFx("Assets/bonus.wav");
-	
+	lap_fx = App->audio->LoadFx("Assets/Audio/SFX/f1.wav");
+	accelerate_fx = App->audio->LoadFx("Assets/Audio/SFX/car.wav");
 
 	waypoints.push_back({ 203, 1740 });
 	waypoints.push_back({ 159, 967 });
@@ -330,12 +336,12 @@ bool ModuleGame::CleanUp()
 }
 
 void  ModuleGame::CreateCar(int x, int y, int w, int h, float scale, int dir, bool playable, int id) {
-	Tire* fl = new Tire(App->renderer,App->physics, x, y, 10 * scale, 20 * scale, dir, this, box);
-	Tire* fr = new Tire(App->renderer,App->physics, x, y, 10 * scale, 20 * scale, dir, this, box);
-	Tire* rl = new Tire(App->renderer,App->physics, x, y, 10 * scale, 20 * scale, dir, this, box);
-	Tire* rr = new Tire(App->renderer,App->physics, x, y, 10 * scale, 20 * scale, dir, this, box);
+	Tire* fl = new Tire(App->renderer,App->physics, x, y, 10 * scale, 20 * scale, dir, this, wheel);
+	Tire* fr = new Tire(App->renderer,App->physics, x, y, 10 * scale, 20 * scale, dir, this, wheel);
+	Tire* rl = new Tire(App->renderer,App->physics, x, y, 10 * scale, 20 * scale, dir, this, wheel);
+	Tire* rr = new Tire(App->renderer,App->physics, x, y, 10 * scale, 20 * scale, dir, this, wheel);
 
-	Car* car = new Car(App->renderer,App->physics, x, y, w * scale, h * scale, dir, fl, fr, rl, rr, this, box, playable, id);
+	Car* car = new Car(App->renderer,App->physics, x, y, w * scale, h * scale, dir, fl, fr, rl, rr, this, carT, playable, id);
 	entities.emplace_back(car);
 }
 
@@ -355,13 +361,21 @@ void ModuleGame::CreateRace(int x, int y, int w, int h, float scale, int dir) {
 // Update: draw background
 update_status ModuleGame::Update()
 {
+
+	if (IsKeyPressed(KEY_ONE)) {
+
+		debug = !debug;
+	}
+
 	if (onRace || onMenu) {
 		if (onRace) {
 			UpdateLeaderboard();
 		}
 
 		App->renderer->Draw(map,0,0,0,0,0,0,3);
-		DrawWaypointsDebug();
+		if (debug) {
+			DrawWaypointsDebug();
+		}
 		// Activar rayo con espacio
 		if (IsKeyPressed(KEY_SPACE))
 		{
@@ -370,10 +384,10 @@ update_status ModuleGame::Update()
 			ray.y = GetMouseY();
 		}
 		// Crear entidades
-		if (IsKeyPressed(KEY_ONE))
-			entities.emplace_back(new Tire(App->renderer, App->physics, GetMouseX(), GetMouseY(), 5, 10, 1, this, box));
+		
+			
 
-		if (IsKeyPressed(KEY_TWO)) {
+		/*if (IsKeyPressed(KEY_TWO)) {
 			CreateCar(GetMouseX() - App->renderer->camera.x, GetMouseY() - App->renderer->camera.y, 50, 100, 1.0f, 0, false,-1);
 			printf("Coloco coche en: %f, %f\n", GetMouseX() - App->renderer->camera.x, GetMouseY() - App->renderer->camera.y);
 		}
@@ -381,7 +395,7 @@ update_status ModuleGame::Update()
 
 			CreateRace(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 50, 100, 1.0f, 3);
 
-		}
+		}*/
 
 		// Procesar input para cada coche
 		for (PhysicEntity* entity : entities)
@@ -400,6 +414,7 @@ update_status ModuleGame::Update()
 				if (IsKeyDown(KEY_W)) {
 					car->frontLeft->speed.y = car->frontLeft->maxForwardSpeed;
 					car->frontRight->speed.y = car->frontRight->maxForwardSpeed;
+					App->audio->PlayFx(accelerate_fx);
 				}
 				else if (IsKeyDown(KEY_S)) {
 					car->frontLeft->speed.y = -car->frontLeft->maxBackwardSpeed;
@@ -422,7 +437,7 @@ update_status ModuleGame::Update()
 					car->frontLeft->direction = 0;
 					car->frontRight->direction = 0;
 				}
-				if (car->currentLap == 2) {
+				if (car->currentLap == 3) {
 					App->state->ChangeState(GameState::RESULTS);
 				}
 			}
@@ -619,8 +634,8 @@ void ModuleGame::DeleteRace() {
 		Car* car = dynamic_cast<Car*>(*it);
 		if (car && car->id >= 0)
 		{
-			delete car;                 // llama a ~Car() ? borra ruedas y cuerpo
-			it = entities.erase(it);    // elimina del vector
+			delete car;                 
+			it = entities.erase(it);   
 		}
 		else
 		{

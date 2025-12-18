@@ -47,9 +47,14 @@ public:
 	Texture2D box;
 	Texture2D rick;
 	Texture2D map;
+	Texture2D wheel;
+	Texture2D carT;
+	uint32 lap_fx;
+	uint32 accelerate_fx;
 
 	bool onRace = false;
 	bool onMenu = true;
+	bool debug = false;
 
 	uint32 bonus_fx;
 

@@ -96,14 +96,20 @@ unsigned int ModuleAudio::LoadFx(const char* path)
 // Play WAV
 bool ModuleAudio::PlayFx(unsigned int id, int repeat)
 {
-	if (IsEnabled() == false)
-	{
+	if (!IsEnabled() || id >= fx_count)
 		return false;
+
+	
+	if (!IsSoundPlaying(fx[id]))
+	{
+		PlaySound(fx[id]);
 	}
 
-	bool ret = false;
+	return true;
+}
 
-	if(id < fx_count) PlaySound(fx[id]);
-
-	return ret;
+void ModuleAudio::StopFx(unsigned int id)
+{
+	if (id < fx_count)
+		StopSound(fx[id]);
 }
