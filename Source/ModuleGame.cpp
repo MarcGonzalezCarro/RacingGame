@@ -424,7 +424,14 @@ update_status ModuleGame::Update()
 					car->frontLeft->speed.y = 0;
 					car->frontRight->speed.y = 0;
 				}
-
+				if (IsKeyDown(KEY_SPACE)) {
+					car->frontLeft->maxDriveForce = 1.0f;
+					car->frontRight->maxDriveForce = 1.0f;
+				}
+				else {
+					car->frontLeft->maxDriveForce = 1.0f * 0.5f;
+					car->frontRight->maxDriveForce = 1.0f * 0.5f;
+				}
 				if (IsKeyDown(KEY_A)) {
 					car->frontLeft->direction = 1;
 					car->frontRight->direction = 1;
