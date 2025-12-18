@@ -22,11 +22,17 @@ public:
 	bool Start();
 	update_status Update();
 	bool CleanUp();
-	void CreateCar(int x, int y, int w, int h, float scale, int dir, bool playable);
+	void CreateCar(int x, int y, int w, int h, float scale, int dir, bool playable, int id);
 	void CreateRace(int x, int y, int w, int h, float scale, int dir);
 	void OnCollision(PhysBody* bodyA, PhysBody* bodyB);
 
-	void DebugClickWaypoint();
+	void CreateMockUpCar();
+
+	void DestroyMockUpCar();
+
+	void UpdateLeaderboard();
+
+	void DrawWaypointsDebug();
 
 public:
 
@@ -41,6 +47,7 @@ public:
 	Texture2D map;
 
 	bool onRace = false;
+	bool onMenu = true;
 
 	uint32 bonus_fx;
 
@@ -48,5 +55,5 @@ public:
 	bool ray_on;
 
 	std::set<std::set<PhysicEntity*>> collidingEntities;
-	
+	std::vector<int> leaderboard;
 };

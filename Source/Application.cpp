@@ -26,13 +26,13 @@ Application::Application()
 	// Main Modules
 	AddModule(window);
 	AddModule(state);
-	AddModule(ui);
+	
 	AddModule(physics);
 	AddModule(audio);
 	
 	// Scenes
 	AddModule(scene_intro);
-
+	AddModule(ui);
 	// Rendering happens at the end
 	AddModule(renderer);
 }

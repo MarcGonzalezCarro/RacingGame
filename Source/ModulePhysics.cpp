@@ -420,7 +420,10 @@ PhysBody* ModulePhysics::CreateChain(int x, int y, const int* points, int size)
 
 void ModulePhysics::DeleteBody(PhysBody* body)
 {
+	if (!body) return;
+
 	world->DestroyBody(body->body);
+	delete body;
 }
 
 // 

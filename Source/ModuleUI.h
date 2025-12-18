@@ -18,6 +18,26 @@ public:
 	void UpdateMainMenu();
 	void UpdatePlayMenu();
 	void UpdateOptionsMenu();
+	void UpdateRaceUI();
+
+	void SyncLeaderboard();
+
+	void UpdateLeaderboardAnimation();
+
+	void DrawLeaderboard();
+
+	struct LeaderboardEntryUI
+	{
+		int carId;
+		float y;         
+		float targetY;    
+		float animSpeed;  
+		int lastRank = -1;
+		int rank;
+		float flashTimer = 0.0f;
+	};
+
+	std::vector<LeaderboardEntryUI> leaderboardUI;
 private:
 	
 };

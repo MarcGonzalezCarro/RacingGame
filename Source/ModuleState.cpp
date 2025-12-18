@@ -20,6 +20,7 @@ bool ModuleState::Init()
 	LOG("Creating Renderer context");
 	bool ret = true;
 
+	
 	return ret;
 }
 
@@ -108,7 +109,7 @@ void ModuleState::ProcessStateChange()
 void ModuleState::OnEnterMenu()
 {
 	LOG("STATE ? MENU");
-
+	App->scene_intro->CreateMockUpCar();
 	// Mostrar UI menú
 }
 
@@ -120,6 +121,7 @@ void ModuleState::OnExitMenu()
 void ModuleState::OnEnterRace()
 {
 	LOG("STATE ? RACE");
+	App->scene_intro->DestroyMockUpCar();
 	App->scene_intro->CreateRace(800,1750,50,100,1.0f,3);
 	
 }
