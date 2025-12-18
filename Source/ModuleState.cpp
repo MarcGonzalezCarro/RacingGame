@@ -117,6 +117,7 @@ void ModuleState::OnEnterMenu()
 void ModuleState::OnExitMenu()
 {
 	LOG("EXIT MENU");
+	App->scene_intro->DestroyMockUpCar();
 }
 
 void ModuleState::OnEnterRace()
