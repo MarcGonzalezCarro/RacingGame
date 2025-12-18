@@ -34,6 +34,8 @@ public:
 
 	void DrawWaypointsDebug();
 
+	void DeleteRace();
+
 public:
 
 	std::vector<PhysicEntity*> entities;

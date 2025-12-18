@@ -110,6 +110,7 @@ void ModuleState::OnEnterMenu()
 {
 	LOG("STATE ? MENU");
 	App->scene_intro->CreateMockUpCar();
+	App->scene_intro->onMenu = true;
 	// Mostrar UI menú
 }
 
@@ -129,17 +130,18 @@ void ModuleState::OnEnterRace()
 void ModuleState::OnExitRace()
 {
 	LOG("EXIT RACE");
+	App->scene_intro->DeleteRace();
 	App->scene_intro->onRace = false;
 }
 
 void ModuleState::OnEnterResults()
 {
 	LOG("STATE ? RESULTS");
-
-	
+	printf("Race Finish\n");
+	ChangeState(GameState::MENU_MAIN);
 }
 
 void ModuleState::OnExitResults()
 {
-	LOG("EXIT RESULTS");
+	printf("EXIT RESULTS\n");
 }

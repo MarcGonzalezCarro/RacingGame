@@ -118,6 +118,7 @@ public:
 	ModulePhysics* phys;
 
 	int currentWaypoint = 0;
+	int currentLap = 0;
 	float waypointRadius = 100.0f;
 
 	int id;
@@ -252,9 +253,9 @@ public:
 
 	void Car::UpdateWaypointProgress()
 	{
-		if (currentWaypoint >= waypoints.size())
+		if (currentWaypoint >= waypoints.size()) {
 			currentWaypoint = 0;
-
+		}
 		Waypoint& wp = waypoints[currentWaypoint];
 
 		if (HasReachedWaypoint(wp))
@@ -264,8 +265,10 @@ public:
 			waypointOffset.x = GetRandomValue(-maxOffset, maxOffset);
 			waypointOffset.y = GetRandomValue(-maxOffset, maxOffset);
 
-			if (currentWaypoint >= waypoints.size())
+			if (currentWaypoint >= waypoints.size()) {
 				currentWaypoint = 0;
+				currentLap++;
+			}
 		}
 	}
 private:
@@ -419,6 +422,9 @@ update_status ModuleGame::Update()
 					car->frontLeft->direction = 0;
 					car->frontRight->direction = 0;
 				}
+				if (car->currentLap == 2) {
+					App->state->ChangeState(GameState::RESULTS);
+				}
 			}
 			else
 			{
@@ -524,6 +530,7 @@ void ModuleGame::UpdateLeaderboard()
 	{
 		int id;
 		int waypoint;
+		int lap;
 		float distToNext;
 	};
 
@@ -545,16 +552,23 @@ void ModuleGame::UpdateLeaderboard()
 		progress.push_back({
 			car->id,
 			car->currentWaypoint,
+			car->currentLap,
 			dist
 			});
 	}
 
-	std::sort(progress.begin(), progress.end(),
-		[](const CarProgress& a, const CarProgress& b)
+	//We sort using current lap first
+	std::sort(progress.begin(), progress.end(),[](const CarProgress& a, const CarProgress& b) 
 		{
-			if (a.waypoint != b.waypoint)
-				return a.waypoint > b.waypoint;     
-			return a.distToNext < b.distToNext;      
+			if (a.lap != b.lap) {
+				return a.lap > b.lap;
+			}
+
+			if (a.waypoint != b.waypoint) {
+				return a.waypoint > b.waypoint;
+			}
+			
+			return a.distToNext < b.distToNext;
 		});
 
 	leaderboard.clear();
@@ -576,7 +590,7 @@ void ModuleGame::DrawWaypointsDebug()
 			c
 		);
 
-		// índice
+		
 		DrawText(
 			std::to_string(i).c_str(),
 			waypoints[i].x + App->renderer->camera.x + 8,
@@ -586,7 +600,7 @@ void ModuleGame::DrawWaypointsDebug()
 		);
 	}
 
-	// 2?? Líneas entre waypoints
+	
 	for (int i = 0; i < waypoints.size() - 1; ++i)
 	{
 		DrawLine(
@@ -596,5 +610,21 @@ void ModuleGame::DrawWaypointsDebug()
 			waypoints[i + 1].y + App->renderer->camera.y,
 			Fade(WHITE, 0.4f)
 		);
+	}
+}
+
+void ModuleGame::DeleteRace() {
+	for (auto it = entities.begin(); it != entities.end(); )
+	{
+		Car* car = dynamic_cast<Car*>(*it);
+		if (car && car->id >= 0)
+		{
+			delete car;                 // llama a ~Car() ? borra ruedas y cuerpo
+			it = entities.erase(it);    // elimina del vector
+		}
+		else
+		{
+			++it;
+		}
 	}
 }
