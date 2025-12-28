@@ -7,6 +7,8 @@
 #include "ModuleState.h"
 #include <algorithm>
 #include <string>
+#include <fstream>
+#include <sstream>
 
 struct Waypoint
 {
@@ -300,7 +302,7 @@ bool ModuleGame::Start()
 	circle = LoadTexture("Assets/wheel.png");
 	box = LoadTexture("Assets/crate.png");
 	rick = LoadTexture("Assets/rick_head.png");
-	map = LoadTexture("Assets/MapaTemporal.png");
+	map = LoadTexture("Assets/Map1/Map.png");
 	wheel = LoadTexture("Assets/Rueda.png");
 	carT = LoadTexture("Assets/Car.png");
 
@@ -322,6 +324,7 @@ bool ModuleGame::Start()
 	waypoints.push_back({ 1922, 1649 });
 	waypoints.push_back({ 1666, 1774 });
 	
+
 	App->state->ChangeState(GameState::MENU_MAIN);
 
 	return ret;
@@ -354,6 +357,7 @@ void ModuleGame::CreateRace(int x, int y, int w, int h, float scale, int dir) {
 
 		CreateCar(x + ox, y + oy, w, h, scale, dir, i == 0, i);
 	}
+
 	onMenu = false;
 	onRace = true;
 }
@@ -372,7 +376,7 @@ update_status ModuleGame::Update()
 			UpdateLeaderboard();
 		}
 
-		App->renderer->Draw(map,0,0,0,0,0,0,3);
+		App->renderer->Draw(map,0,0,0,0,0,0,4);
 		if (debug) {
 			DrawWaypointsDebug();
 		}
@@ -387,7 +391,7 @@ update_status ModuleGame::Update()
 		
 			
 
-		/*if (IsKeyPressed(KEY_TWO)) {
+		if (IsKeyPressed(KEY_TWO)) {
 			CreateCar(GetMouseX() - App->renderer->camera.x, GetMouseY() - App->renderer->camera.y, 50, 100, 1.0f, 0, false,-1);
 			printf("Coloco coche en: %f, %f\n", GetMouseX() - App->renderer->camera.x, GetMouseY() - App->renderer->camera.y);
 		}
@@ -395,7 +399,7 @@ update_status ModuleGame::Update()
 
 			CreateRace(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 50, 100, 1.0f, 3);
 
-		}*/
+		}
 
 		// Procesar input para cada coche
 		for (PhysicEntity* entity : entities)
@@ -649,4 +653,148 @@ void ModuleGame::DeleteRace() {
 			++it;
 		}
 	}
+}
+
+void ModuleGame::CreateMapBorders()
+{
+	// Map bounds (same for all maps)
+	const int left = 830;
+	const int right = 3300;
+	const int top = 513;
+	const int bottom = 2278;
+
+	const int thickness = 20; // wall thickness
+
+	int width = right - left;
+	int height = bottom - top;
+
+	// Top wall
+	PhysBody* border1 = App->physics->CreateStaticRectangle(
+		left + width / 2,
+		top - thickness / 2,
+		width,
+		thickness
+	);
+	mapBodies.push_back(border1);
+	// Bottom wall
+	PhysBody* border2 = App->physics->CreateStaticRectangle(
+		left + width / 2,
+		bottom + thickness / 2,
+		width,
+		thickness
+	);
+	mapBodies.push_back(border2);
+	// Left wall
+	PhysBody* border3 = App->physics->CreateStaticRectangle(
+		left - thickness / 2,
+		top + height / 2,
+		thickness,
+		height
+	);
+	mapBodies.push_back(border3);
+	// Right wall
+	PhysBody* border4 = App->physics->CreateStaticRectangle(
+		right + thickness / 2,
+		top + height / 2,
+		thickness,
+		height
+	);
+	mapBodies.push_back(border4);
+}
+
+void ModuleGame::CreateMap(int mapId)
+{
+	
+	CreateMapBorders();
+
+	LoadWaypoints(mapId);
+
+	for (PhysicEntity* entity : entities)
+	{
+		Car* car = dynamic_cast<Car*>(entity);
+		if (car)
+		{
+			car->currentWaypoint = 0;
+			car->currentLap = 0;
+		}
+	}
+}
+
+void ModuleGame::LoadWaypoints(int mapId)
+{
+	waypoints.clear();
+
+	// Valores por defecto (por seguridad)
+	int startX = 0;
+	int startY = 0;
+	int carW = 50;
+	int carH = 100;
+	float carScale = 1.0f;
+	int carDir = 0;
+
+	std::string mapName = "Assets/Map" + std::to_string(mapId) + "/Map.png";
+	UnloadTexture(map);
+	map = LoadTexture(mapName.c_str());
+	std::string filename = "Assets/Map" + std::to_string(mapId) + "/Map.txt";
+	std::ifstream file(filename);
+
+	if (!file.is_open())
+	{
+		LOG("ERROR: Could not open map file %s", filename.c_str());
+		return;
+	}
+
+	std::string line;
+	while (std::getline(file, line))
+	{
+		if (line.empty() || line[0] == '#')
+			continue;
+
+		std::stringstream ss(line);
+		std::string tag;
+		ss >> tag;
+
+		if (tag == "START")
+		{
+			ss >> startX >> startY;
+		}
+		else if (tag == "CAR_SIZE")
+		{
+			ss >> carW >> carH;
+		}
+		else if (tag == "CAR_SCALE")
+		{
+			ss >> carScale;
+		}
+		else if (tag == "CAR_DIR")
+		{
+			ss >> carDir;
+		}
+		else if (tag == "WP")
+		{
+			Waypoint wp;
+			ss >> wp.x >> wp.y;
+			waypoints.push_back(wp);
+		}
+	}
+
+	file.close();
+
+	
+	CreateRace(startX, startY, carW, carH, carScale, carDir);
+}
+
+void ModuleGame::DeleteMap()
+{
+	// Borrar waypoints
+	waypoints.clear();
+
+	// Borrar cuerpos físicos del mapa (bordes)
+	for (PhysBody* body : mapBodies)
+	{
+		App->physics->DeleteBody(body);
+	}
+	mapBodies.clear();
+
+	LOG("Map deleted");
 }

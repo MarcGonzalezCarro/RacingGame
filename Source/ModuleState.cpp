@@ -124,7 +124,9 @@ void ModuleState::OnEnterRace()
 {
 	LOG("STATE ? RACE");
 	App->scene_intro->DestroyMockUpCar();
-	App->scene_intro->CreateRace(800,1750,50,100,1.0f,3);
+	App->scene_intro->DeleteMap();
+	App->scene_intro->CreateMap(1);
+	//App->scene_intro->CreateRace(800,1750,50,100,1.0f,3);
 	
 }
 

@@ -36,6 +36,14 @@ public:
 
 	void DeleteRace();
 
+	void CreateMapBorders();
+
+	void CreateMap(int mapId);
+
+	void LoadWaypoints(int mapId);
+
+	void DeleteMap();
+
 public:
 
 	std::vector<PhysicEntity*> entities;
@@ -61,6 +69,7 @@ public:
 	vec2<int> ray;
 	bool ray_on;
 
+	std::vector<PhysBody*> mapBodies;
 	std::set<std::set<PhysicEntity*>> collidingEntities;
 	std::vector<int> leaderboard;
 };
