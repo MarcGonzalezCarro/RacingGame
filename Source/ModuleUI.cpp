@@ -313,7 +313,7 @@ void ModuleUI::DrawResultsScreen()
 	for (int i = 0; i < laps.size(); ++i)
 	{
 		char buffer[64];
-		sprintf(buffer, "Lap %d: %.2f s", i + 1, laps[i]);
+		sprintf_s(buffer, "Lap %d: %.2f s", i + 1, laps[i]);
 		DrawText(buffer, 80, y, 18, BLACK);
 		y += 22;
 	}
@@ -321,7 +321,7 @@ void ModuleUI::DrawResultsScreen()
 	// ---- TIEMPO TOTAL ----
 	y += 20;
 	char total[64];
-	sprintf(total, "Total Time: %.2f s",
+	sprintf_s(total, "Total Time: %.2f s",
 		App->scene_intro->results.totalTime);
 
 	DrawText(total, 80, y, 22, DARKBLUE);
@@ -341,7 +341,7 @@ void ModuleUI::DrawRaceTimer()
 	int millis = (int)((time - (int)time) * 1000);
 
 	char buffer[32];
-	sprintf(buffer, "%02d:%02d.%03d", minutes, seconds, millis);
+	sprintf_s(buffer, "%02d:%02d.%03d", minutes, seconds, millis);
 
 	DrawText(buffer, SCREEN_WIDTH / 2 - 80, 20, 30, BLACK);
 }
