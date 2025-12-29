@@ -52,6 +52,10 @@ update_status ModuleUI::Update()
 		SyncLeaderboard();
 		UpdateLeaderboardAnimation();
 		DrawLeaderboard();
+		DrawRaceTimer();
+		break;
+	case GameState::RESULTS:
+		DrawResultsScreen();
 		break;
 	}
 
@@ -106,17 +110,55 @@ void ModuleUI::UpdateMainMenu()
 }
 void ModuleUI::UpdatePlayMenu()
 {
-	int cx = SCREEN_WIDTH / 2 - 100;
+	int centerX = SCREEN_WIDTH / 2;
 
-	if (Button(cx, 220, 200, 50, "JUGAR"))
+	// ---- TÍTULO ----
+	DrawText(
+		"SELECCIONA MAPA",
+		centerX - MeasureText("SELECCIONA MAPA", 24) / 2,
+		120,
+		24,
+		BLACK
+	);
+
+	// ---- GRID DE MAPAS ----
+	const int buttonW = 160;
+	const int buttonH = 50;
+	const int spacingX = 20;
+	const int spacingY = 20;
+
+	int startX = centerX - (buttonW * 3 + spacingX * 2) / 2;
+	int startY = 180;
+
+	int _mapId = 1;
+
+	for (int row = 0; row < 2; ++row)
 	{
-		App->state->ChangeState(GameState::RACE);
+		for (int col = 0; col < 3; ++col)
+		{
+			int x = startX + col * (buttonW + spacingX);
+			int y = startY + row * (buttonH + spacingY);
+
+			std::string label = "";
+
+			if (Button(x, y, buttonW, buttonH, label.c_str()))
+			{
+				// Aquí puedes guardar el mapa seleccionado si quieres
+				App->state->mapId = _mapId;
+
+				App->state->ChangeState(GameState::RACE);
+			}
+
+			_mapId++;
+		}
 	}
 
-	if (Button(cx, 290, 200, 50, "ATRAS"))
+	// ---- BOTÓN ATRÁS ----
+	if (Button(centerX - 100, startY + 2 * (buttonH + spacingY) + 40, 200, 50, "ATRAS"))
 	{
 		App->state->ChangeState(GameState::MENU_MAIN);
 	}
+
 }
 void ModuleUI::UpdateOptionsMenu()
 {
@@ -235,4 +277,71 @@ void ModuleUI::DrawLeaderboard()
         // Dibujar coche a la derecha del número de posición
         DrawText(text.c_str(), x + 30, (int)e.y, 18, c);
     }
+}
+
+void ModuleUI::DrawResultsScreen()
+{
+	int cx = SCREEN_WIDTH / 2;
+	int y = 80;
+
+	// Título
+	DrawText("RACE RESULTS", cx - 100, y, 30, BLACK);
+	y += 50;
+
+	// ---- CLASIFICACIÓN ----
+	DrawText("FINAL POSITIONS", 80, y, 22, BLACK);
+	y += 30;
+
+	const auto& leaderboard = App->scene_intro->results.finalLeaderboard;
+
+	for (int i = 0; i < leaderboard.size(); ++i)
+	{
+		std::string line =
+			std::to_string(i + 1) + ". Car " + std::to_string(leaderboard[i]);
+
+		DrawText(line.c_str(), 80, y, 18, BLACK);
+		y += 22;
+	}
+
+	// ---- TIEMPOS ----
+	y += 20;
+	DrawText("LAP TIMES", 80, y, 22, BLACK);
+	y += 30;
+
+	const auto& laps = App->scene_intro->results.lapTimes;
+
+	for (int i = 0; i < laps.size(); ++i)
+	{
+		char buffer[64];
+		sprintf(buffer, "Lap %d: %.2f s", i + 1, laps[i]);
+		DrawText(buffer, 80, y, 18, BLACK);
+		y += 22;
+	}
+
+	// ---- TIEMPO TOTAL ----
+	y += 20;
+	char total[64];
+	sprintf(total, "Total Time: %.2f s",
+		App->scene_intro->results.totalTime);
+
+	DrawText(total, 80, y, 22, DARKBLUE);
+
+	if (Button(cx - 100, SCREEN_HEIGHT - 100, 200, 50, "VOLVER AL MENU"))
+	{
+		App->state->ChangeState(GameState::MENU_MAIN);
+	}
+}
+
+void ModuleUI::DrawRaceTimer()
+{
+	double time = App->scene_intro->GetRaceTime();
+
+	int minutes = (int)(time / 60.0);
+	int seconds = (int)time % 60;
+	int millis = (int)((time - (int)time) * 1000);
+
+	char buffer[32];
+	sprintf(buffer, "%02d:%02d.%03d", minutes, seconds, millis);
+
+	DrawText(buffer, SCREEN_WIDTH / 2 - 80, 20, 30, BLACK);
 }

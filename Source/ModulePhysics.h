@@ -61,6 +61,7 @@ public:
 	b2RevoluteJoint* CreateSteerJoint(PhysBody* car, PhysBody* wheel, b2Vec2 anchor, float lowerDeg, float upperDeg);
 	PhysBody* CreateRectangleSensor(int x, int y, int width, int height);
 	PhysBody* CreateStaticRectangle(int x, int y, int width, int height);
+	PhysBody* CreateWaypointSensor(int x, int y, int w, int h, float angleRad, Module* listener);
 	PhysBody* CreateChain(int x, int y, const int* points, int size);
 	void DeleteBody(PhysBody* body);
 
