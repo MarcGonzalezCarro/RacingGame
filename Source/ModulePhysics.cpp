@@ -409,7 +409,37 @@ PhysBody* ModulePhysics::CreateStaticRectangle(int x, int y, int width, int heig
 
 	return pbody;
 }
+PhysBody* ModulePhysics::CreateWaypointSensor(
+	int x, int y, int w, int h, float angleRad, Module* listener)
+{
+	PhysBody* pbody = new PhysBody();
 
+	b2BodyDef bodyDef;
+	bodyDef.type = b2_staticBody;
+	bodyDef.position.Set(
+		PIXEL_TO_METERS(x),
+		PIXEL_TO_METERS(y)
+	);
+	bodyDef.angle = angleRad;
+
+	b2Body* body = world->CreateBody(&bodyDef);
+
+	b2PolygonShape shape;
+	shape.SetAsBox(
+		PIXEL_TO_METERS(w * 0.5f),
+		PIXEL_TO_METERS(h * 0.5f)
+	);
+
+	b2FixtureDef fixture;
+	fixture.shape = &shape;
+	fixture.isSensor = true;
+
+	body->CreateFixture(&fixture);
+
+	pbody->body = body;
+	pbody->listener = listener;
+	return pbody;
+}
 PhysBody* ModulePhysics::CreateChain(int x, int y, const int* points, int size)
 {
 	PhysBody* pbody = new PhysBody();

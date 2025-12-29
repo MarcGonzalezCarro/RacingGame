@@ -12,6 +12,12 @@
 class PhysBody;
 class PhysicEntity;
 
+struct RaceResults
+{
+	std::vector<int> finalLeaderboard;
+	std::vector<double> lapTimes;
+	double totalTime = 0.0;
+};
 
 class ModuleGame : public Module
 {
@@ -40,9 +46,11 @@ public:
 
 	void CreateMap(int mapId);
 
-	void LoadWaypoints(int mapId);
+	void LoadWaypoints(int mapId, bool race);
 
 	void DeleteMap();
+
+	double GetRaceTime() const;
 
 public:
 
@@ -72,4 +80,6 @@ public:
 	std::vector<PhysBody*> mapBodies;
 	std::set<std::set<PhysicEntity*>> collidingEntities;
 	std::vector<int> leaderboard;
+
+	RaceResults results;
 };

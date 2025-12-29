@@ -26,6 +26,10 @@ public:
 
 	void DrawLeaderboard();
 
+	void DrawResultsScreen();
+
+	void DrawRaceTimer();
+
 	struct LeaderboardEntryUI
 	{
 		int carId;

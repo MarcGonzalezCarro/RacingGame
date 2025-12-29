@@ -26,7 +26,7 @@ public:
 
 	void ChangeState(GameState newState);
 	GameState GetState() const { return currentState; }
-
+	int mapId = 1;
 private:
 	GameState currentState = GameState::MENU_MAIN;
 	GameState nextState = GameState::MENU_MAIN;

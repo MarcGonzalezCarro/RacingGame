@@ -14,8 +14,13 @@ struct Waypoint
 {
 	int x;
 	int y;
+	int w;
+	int h;
+	float angle;         
+	PhysBody* sensor;
 };
 std::vector<Waypoint> waypoints;
+
 class PhysicEntity
 {
 protected:
@@ -122,6 +127,12 @@ public:
 	int currentWaypoint = 0;
 	int currentLap = 0;
 	float waypointRadius = 100.0f;
+
+	Timer raceTimer;                 
+	Timer lapTimer;                  
+	std::vector<double> lapTimes;
+
+	bool raceFinished = false;
 
 	int id;
 
@@ -272,6 +283,12 @@ public:
 				currentLap++;
 				if (id == 0) {
 					phys->App->audio->PlayFx(phys->App->scene_intro->lap_fx);
+					double lapTime = lapTimer.ReadSec();
+					lapTimes.push_back(lapTime);
+					lapTimer.Start();
+					if (currentLap == 3) {
+						raceFinished = true;
+					}
 				}
 			}
 		}
@@ -310,21 +327,6 @@ bool ModuleGame::Start()
 	lap_fx = App->audio->LoadFx("Assets/Audio/SFX/f1.wav");
 	accelerate_fx = App->audio->LoadFx("Assets/Audio/SFX/car.wav");
 
-	waypoints.push_back({ 203, 1740 });
-	waypoints.push_back({ 159, 967 });
-	waypoints.push_back({ 260, 730 });
-	waypoints.push_back({ 158, 429 });
-	waypoints.push_back({ 201, 195 });
-	waypoints.push_back({ 1856, 176 });
-	waypoints.push_back({ 1907, 466 });
-	waypoints.push_back({ 856, 507 });
-	waypoints.push_back({ 846, 796 });
-	waypoints.push_back({ 1623, 862 });
-	waypoints.push_back({ 1692, 1449 });
-	waypoints.push_back({ 1922, 1649 });
-	waypoints.push_back({ 1666, 1774 });
-	
-
 	App->state->ChangeState(GameState::MENU_MAIN);
 
 	return ret;
@@ -346,6 +348,14 @@ void  ModuleGame::CreateCar(int x, int y, int w, int h, float scale, int dir, bo
 
 	Car* car = new Car(App->renderer,App->physics, x, y, w * scale, h * scale, dir, fl, fr, rl, rr, this, carT, playable, id);
 	entities.emplace_back(car);
+
+	if (car->isplayer)
+	{
+		car->raceTimer.Start();
+		car->lapTimer.Start();
+		car->lapTimes.clear();
+		car->raceFinished = false;
+	}
 }
 
 void ModuleGame::CreateRace(int x, int y, int w, int h, float scale, int dir) {
@@ -448,7 +458,10 @@ update_status ModuleGame::Update()
 					car->frontLeft->direction = 0;
 					car->frontRight->direction = 0;
 				}
-				if (car->currentLap == 3) {
+				if (car->raceFinished) {
+					results.finalLeaderboard = leaderboard;  
+					results.lapTimes = car->lapTimes;
+					results.totalTime = car->raceTimer.ReadSec();
 					App->state->ChangeState(GameState::RESULTS);
 				}
 			}
@@ -476,61 +489,37 @@ update_status ModuleGame::Update()
 
 void ModuleGame::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 {
-	if (!bodyA || !bodyB)
+	for (PhysicEntity* entity : entities)
 	{
-		return;
-	}
+		Car* car = dynamic_cast<Car*>(entity);
+		if (!car) continue;
 
-	bool isCircle1 = false;
-	bool isCircle2 = false;
-
-
-	const b2Fixture* fixture = bodyA->body->GetFixtureList();
-	while (fixture != NULL)
-	{
-		if (const b2CircleShape* circle = dynamic_cast<const b2CircleShape*>(fixture->GetShape()))
+		if (bodyA == car->body || bodyB == car->body)
 		{
-			//sumradius += circle->m_radius;
-			isCircle1 = true;
-			break;
-		}
-		fixture = fixture->GetNext();
-	}
+			PhysBody* other = (bodyA == car->body) ? bodyB : bodyA;
 
-	const b2Fixture* fixture2 = bodyB->body->GetFixtureList();
-	while (fixture2 != NULL)
-	{
-		if (const b2CircleShape* circle = dynamic_cast<const b2CircleShape*>(fixture2->GetShape()))
-		{
-			//sumradius += circle->m_radius;
-			isCircle2 = true;
-			break;
-		}
-		fixture2 = fixture2->GetNext();
-	}
-
-	if (isCircle1 && isCircle2)
-	{
-		std::set<PhysicEntity*> colliding;
-		//Delete both bodies
-		for (PhysicEntity* entity : entities)
-		{
-			if (entity->body == bodyA || entity->body == bodyB)
+			for (int i = 0; i < waypoints.size(); ++i)
 			{
-				colliding.emplace(entity);
+				if (waypoints[i].sensor == other &&
+					car->currentWaypoint == i)
+				{
+					car->currentWaypoint++;
+
+					if (car->currentWaypoint >= waypoints.size())
+					{
+						car->currentWaypoint = 0;
+						car->currentLap++;
+					}
+				}
 			}
 		}
-		collidingEntities.emplace(colliding);
-
-
 	}
-
 
 }
 
 
 void ModuleGame::CreateMockUpCar() {
-	CreateCar(800, 1750, 50, 100, 1.0f, 3, false,-1);
+	CreateCar(1654, 2387, 50, 100, 1.0f, 3, false,-1);
 }
 
 void ModuleGame::DestroyMockUpCar() {
@@ -607,9 +596,9 @@ void ModuleGame::DrawWaypointsDebug()
 	
 	for (int i = 0; i < waypoints.size(); ++i)
 	{
-		Color c = (i == 0) ? GREEN : ORANGE;
+		/*Color c = (i == 0) ? GREEN : ORANGE;*/
 
-		DrawCircle(
+		/*DrawCircle(
 			waypoints[i].x + App->renderer->camera.x,
 			waypoints[i].y + App->renderer->camera.y,
 			100,
@@ -623,6 +612,18 @@ void ModuleGame::DrawWaypointsDebug()
 			waypoints[i].y + App->renderer->camera.y - 8,
 			14,
 			WHITE
+		);*/
+
+		DrawRectanglePro(
+			{
+				waypoints[i].x + App->renderer->camera.x,
+				waypoints[i].y + App->renderer->camera.y,
+				(float)waypoints[i].w,
+				(float)waypoints[i].h
+			},
+			{ waypoints[i].w / 2.0f, waypoints[i].h / 2.0f },
+			waypoints[i].angle * RAD2DEG,
+			Fade(RED, 0.3f)
 		);
 	}
 
@@ -661,7 +662,7 @@ void ModuleGame::CreateMapBorders()
 	const int left = 830;
 	const int right = 3300;
 	const int top = 513;
-	const int bottom = 2278;
+	const int bottom = 2695;
 
 	const int thickness = 20; // wall thickness
 
@@ -707,7 +708,7 @@ void ModuleGame::CreateMap(int mapId)
 	
 	CreateMapBorders();
 
-	LoadWaypoints(mapId);
+	LoadWaypoints(mapId, true);
 
 	for (PhysicEntity* entity : entities)
 	{
@@ -720,7 +721,7 @@ void ModuleGame::CreateMap(int mapId)
 	}
 }
 
-void ModuleGame::LoadWaypoints(int mapId)
+void ModuleGame::LoadWaypoints(int mapId, bool race)
 {
 	waypoints.clear();
 
@@ -744,44 +745,37 @@ void ModuleGame::LoadWaypoints(int mapId)
 		return;
 	}
 
-	std::string line;
-	while (std::getline(file, line))
+	std::string type;
+	while (file >> type)
 	{
-		if (line.empty() || line[0] == '#')
-			continue;
-
-		std::stringstream ss(line);
-		std::string tag;
-		ss >> tag;
-
-		if (tag == "START")
+		if (type == "START")
 		{
-			ss >> startX >> startY;
+			file >> startX >> startY;
 		}
-		else if (tag == "CAR_SIZE")
+		else if (type == "CAR")
 		{
-			ss >> carW >> carH;
+			file >> carW >> carH >> carScale >> carDir;
 		}
-		else if (tag == "CAR_SCALE")
-		{
-			ss >> carScale;
-		}
-		else if (tag == "CAR_DIR")
-		{
-			ss >> carDir;
-		}
-		else if (tag == "WP")
+		else if (type == "WP")
 		{
 			Waypoint wp;
-			ss >> wp.x >> wp.y;
+			float angleDeg;
+
+			file >> wp.x >> wp.y >> wp.w >> wp.h >> angleDeg;
+			wp.angle = angleDeg * DEG2RAD;
+
+			wp.sensor = App->physics->CreateWaypointSensor(
+				wp.x, wp.y, wp.w, wp.h, wp.angle, this);
+
 			waypoints.push_back(wp);
 		}
 	}
 
 	file.close();
 
-	
-	CreateRace(startX, startY, carW, carH, carScale, carDir);
+	if (race) {
+		CreateRace(startX, startY, carW, carH, carScale, carDir);
+	}
 }
 
 void ModuleGame::DeleteMap()
@@ -797,4 +791,15 @@ void ModuleGame::DeleteMap()
 	mapBodies.clear();
 
 	LOG("Map deleted");
+}
+
+double ModuleGame::GetRaceTime() const
+{
+	for (PhysicEntity* entity : entities)
+	{
+		Car* car = dynamic_cast<Car*>(entity);
+		if (car && car->isplayer)
+			return car->raceTimer.ReadSec();
+	}
+	return 0.0;
 }
