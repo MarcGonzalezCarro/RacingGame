@@ -1,10 +1,12 @@
-#include "Globals.h"
+﻿#include "Globals.h"
 #include "Application.h"
 #include "ModuleWindow.h"
 #include "ModuleUI.h"
 #include "ModuleRender.h"
 #include "ModuleState.h"
 #include "ModuleGame.h"
+#include "ModuleAudio.h"
+
 #include <math.h>
 #include <string>
 #include <algorithm>
@@ -15,19 +17,20 @@ ModuleUI::ModuleUI(Application* app, bool start_enabled) : Module(app, start_ena
 {
 }
 
-// Destructor
 ModuleUI::~ModuleUI()
 {
 }
 
 bool ModuleUI::Init()
 {
-	LOG("Creating Renderer context");
-	bool ret = true;
-	return ret;
+	LOG("Initializing UI module");
+
+	// Load UI button press sound once
+	pressFx = App->audio->LoadFx("Assets/Audio/SFX/pressSound.wav");
+
+	return true;
 }
 
-// PreUpdate
 update_status ModuleUI::PreUpdate()
 {
 	return UPDATE_CONTINUE;
@@ -64,20 +67,18 @@ update_status ModuleUI::Update()
 	return UPDATE_CONTINUE;
 }
 
-// PostUpdate
 update_status ModuleUI::PostUpdate()
 {
 	return UPDATE_CONTINUE;
 }
 
-// Called before quitting
 bool ModuleUI::CleanUp()
 {
 	return true;
 }
 
 // ------------------------------------------------------------
-// BUTTON
+// Generic button rendering and interaction
 // ------------------------------------------------------------
 bool ModuleUI::Button(int x, int y, int w, int h, const char* text)
 {
@@ -91,14 +92,16 @@ bool ModuleUI::Button(int x, int y, int w, int h, const char* text)
 	Color border = BLACK;
 	Color textCol = RAYWHITE;
 
-	Color bg = hover ? bgHover : bgNormal;
-
-	DrawRectangleRec(rect, bg);
+	DrawRectangleRec(rect, hover ? bgHover : bgNormal);
 	DrawRectangleLines((int)rect.x, (int)rect.y, (int)rect.width, (int)rect.height, border);
 
+	// Highlight when hovered
 	if (hover)
+	{
 		DrawRectangleLinesEx(rect, 2.0f, YELLOW);
+	}
 
+	// Draw centered text if provided
 	if (text && text[0] != '\0')
 	{
 		Font font = App->renderer->fuente;
@@ -117,11 +120,18 @@ bool ModuleUI::Button(int x, int y, int w, int h, const char* text)
 		DrawTextEx(font, text, { textX, textY }, fontSize, spacing, textCol);
 	}
 
-	return hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+	// Handle click
+	if (hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+	{
+		App->audio->PlayFx(pressFx);
+		return true;
+	}
+
+	return false;
 }
 
 // ------------------------------------------------------------
-// MAIN MENU (CENTERED BLOCK)
+// Main menu
 // ------------------------------------------------------------
 void ModuleUI::UpdateMainMenu()
 {
@@ -129,22 +139,22 @@ void ModuleUI::UpdateMainMenu()
 	const int buttonH = 64;
 	const int spacing = 18;
 
-	const int cx = SCREEN_WIDTH / 2 - buttonW / 2;
-	const int centerY = SCREEN_HEIGHT / 2;
+	int x = SCREEN_WIDTH / 2 - buttonW / 2;
+	int centerY = SCREEN_HEIGHT / 2;
 
-	if (Button(cx, centerY - buttonH - spacing / 2, buttonW, buttonH, "JUGAR"))
+	if (Button(x, centerY - buttonH - spacing / 2, buttonW, buttonH, "JUGAR"))
 	{
 		App->state->ChangeState(GameState::MENU_PLAY);
 	}
 
-	if (Button(cx, centerY + spacing / 2, buttonW, buttonH, "CONFIG"))
+	if (Button(x, centerY + spacing / 2, buttonW, buttonH, "CONFIG"))
 	{
 		App->state->ChangeState(GameState::MENU_OPTIONS);
 	}
 }
 
 // ------------------------------------------------------------
-// PLAY MENU
+// Map selection menu
 // ------------------------------------------------------------
 void ModuleUI::UpdatePlayMenu()
 {
@@ -166,74 +176,49 @@ void ModuleUI::UpdatePlayMenu()
 	int startX = centerX - (buttonW * 3 + spacingX * 2) / 2;
 	int startY = 180;
 
-	int _mapId = 1;
+	int mapId = 1;
 
 	for (int row = 0; row < 2; ++row)
 	{
 		for (int col = 0; col < 3; ++col)
 		{
-			int x = startX + col * (buttonW + spacingX);
-			int y = startY + row * (buttonH + spacingY);
-
-			if (Button(x, y, buttonW, buttonH, ""))
+			if (Button(
+				startX + col * (buttonW + spacingX),
+				startY + row * (buttonH + spacingY),
+				buttonW,
+				buttonH,
+				""))
 			{
-				App->state->mapId = _mapId;
+				App->state->mapId = mapId;
 				App->state->ChangeState(GameState::RACE);
 			}
-			_mapId++;
+			mapId++;
 		}
 	}
 
-	const int backW = 240;
-	const int backH = 60;
-
-	if (Button(centerX - backW / 2, SCREEN_HEIGHT - 120, backW, backH, "ATRAS"))
+	if (Button(centerX - 120, SCREEN_HEIGHT - 120, 240, 60, "ATRAS"))
 	{
 		App->state->ChangeState(GameState::MENU_MAIN);
 	}
 }
 
 // ------------------------------------------------------------
-// OPTIONS MENU
+// Options menu
 // ------------------------------------------------------------
 void ModuleUI::UpdateOptionsMenu()
 {
-	const int buttonW = 240;
-	const int buttonH = 60;
-
-	if (Button(SCREEN_WIDTH / 2 - buttonW / 2, SCREEN_HEIGHT / 2, buttonW, buttonH, "ATRAS"))
+	if (Button(SCREEN_WIDTH / 2 - 120, SCREEN_HEIGHT / 2, 240, 60, "ATRAS"))
 	{
 		App->state->ChangeState(GameState::MENU_MAIN);
 	}
 }
 
 // ------------------------------------------------------------
-// RACE UI
-// ------------------------------------------------------------
-void ModuleUI::UpdateRaceUI()
-{
-	const std::vector<int>& leaderboard = App->scene_intro->leaderboard;
-
-	int x = 20;
-	int y = 20;
-
-	DrawText("POSICIONES", x, y, 20, WHITE);
-	y += 30;
-
-	for (int i = 0; i < leaderboard.size(); ++i)
-	{
-		std::string text = std::to_string(i + 1) + " Coche " + std::to_string(leaderboard[i]);
-		DrawText(text.c_str(), x, y, 18, WHITE);
-		y += 22;
-	}
-}
-
-// ------------------------------------------------------------
-// LEADERBOARD
+// Leaderboard logic and rendering
 // ------------------------------------------------------------
 void ModuleUI::SyncLeaderboard()
 {
-	const std::vector<int>& data = App->scene_intro->leaderboard;
+	const auto& data = App->scene_intro->leaderboard;
 
 	if (leaderboardUI.size() != data.size())
 	{
@@ -241,123 +226,88 @@ void ModuleUI::SyncLeaderboard()
 
 		for (int i = 0; i < data.size(); ++i)
 		{
-			leaderboardUI.push_back({
-				data[i],
-				20.0f + i * 24.0f,
-				20.0f + i * 24.0f,
-				8.0f
-				});
+			leaderboardUI.push_back({ data[i], 20.0f, 20.0f, 8.0f });
 		}
 	}
 
 	for (int i = 0; i < data.size(); ++i)
 	{
-		int id = data[i];
-
-		auto it = std::find_if(leaderboardUI.begin(), leaderboardUI.end(),
-			[&](const LeaderboardEntryUI& e) { return e.carId == id; });
-
-		if (it != leaderboardUI.end())
+		for (auto& e : leaderboardUI)
 		{
-			it->targetY = 50.0f + i * 24.0f;
-			it->lastRank = it->rank;
-			it->rank = i + 1;
+			if (e.carId == data[i])
+			{
+				e.targetY = 50.0f + i * 24.0f;
+				e.lastRank = e.rank;
+				e.rank = i + 1;
 
-			if (it->lastRank != -1 && it->lastRank != it->rank)
-				it->flashTimer = 0.5f;
+				if (e.lastRank != -1 && e.lastRank != e.rank)
+					e.flashTimer = 0.5f;
+			}
 		}
 	}
 }
 
 void ModuleUI::UpdateLeaderboardAnimation()
 {
-	float dt = App->deltaTime;
-
-	for (auto& entry : leaderboardUI)
+	for (auto& e : leaderboardUI)
 	{
-		float diff = entry.targetY - entry.y;
-		entry.y += diff * entry.animSpeed * dt;
+		float diff = e.targetY - e.y;
+		e.y += diff * e.animSpeed * App->deltaTime;
 	}
 }
 
 void ModuleUI::DrawLeaderboard()
 {
-	int x = 20;
-	int yStart = 50;
-	int spacing = 24;
-
-	DrawText("POSICIONES", x, 20, 20, BLACK);
+	DrawText("POSICIONES", 20, 20, 20, BLACK);
 
 	for (int i = 0; i < leaderboardUI.size(); ++i)
 	{
 		auto& e = leaderboardUI[i];
 
-		DrawText(std::to_string(i + 1).c_str(), x, yStart + i * spacing, 18, BLACK);
+		Color color = (e.carId == 0) ? YELLOW : BLACK;
 
-		Color c = (e.carId == 0) ? YELLOW : BLACK;
-
-		if (e.flashTimer > 0)
+		if (e.flashTimer > 0.0f)
 		{
-			c = (e.lastRank > i) ? GREEN : RED;
+			color = (e.lastRank > i) ? GREEN : RED;
 			e.flashTimer -= App->deltaTime;
 		}
 
-		std::string text = " Coche " + std::to_string(e.carId);
-		DrawText(text.c_str(), x + 30, (int)e.y, 18, c);
+		DrawText(TextFormat("%d", i + 1), 20, 50 + i * 24, 18, BLACK);
+		DrawText(TextFormat("Coche %d", e.carId), 50, (int)e.y, 18, color);
 	}
 }
 
 // ------------------------------------------------------------
-// RESULTS
+// Results screen and race timer
 // ------------------------------------------------------------
 void ModuleUI::DrawResultsScreen()
 {
-	int cx = SCREEN_WIDTH / 2;
 	int y = 80;
 
-	DrawText("RACE RESULTS", cx - 100, y, 30, BLACK);
+	DrawText("RACE RESULTS", SCREEN_WIDTH / 2 - 100, y, 30, BLACK);
 	y += 50;
 
 	DrawText("FINAL POSITIONS", 80, y, 22, BLACK);
 	y += 30;
 
-	const auto& leaderboard = App->scene_intro->results.finalLeaderboard;
-
-	for (int i = 0; i < leaderboard.size(); ++i)
+	for (int i = 0; i < App->scene_intro->results.finalLeaderboard.size(); ++i)
 	{
-		std::string line = std::to_string(i + 1) + ". Car " + std::to_string(leaderboard[i]);
-		DrawText(line.c_str(), 80, y, 18, BLACK);
+		DrawText(
+			TextFormat("%d. Car %d", i + 1, App->scene_intro->results.finalLeaderboard[i]),
+			80,
+			y,
+			18,
+			BLACK
+		);
 		y += 22;
 	}
 
-	y += 20;
-	DrawText("LAP TIMES", 80, y, 22, BLACK);
-	y += 30;
-
-	const auto& laps = App->scene_intro->results.lapTimes;
-
-	for (int i = 0; i < laps.size(); ++i)
-	{
-		char buffer[64];
-		sprintf_s(buffer, "Lap %d: %.2f s", i + 1, laps[i]);
-		DrawText(buffer, 80, y, 18, BLACK);
-		y += 22;
-	}
-
-	y += 20;
-	char total[64];
-	sprintf_s(total, "Total Time: %.2f s", App->scene_intro->results.totalTime);
-	DrawText(total, 80, y, 22, DARKBLUE);
-
-	if (Button(cx - 120, SCREEN_HEIGHT - 120, 240, 60, "VOLVER AL MENU"))
+	if (Button(SCREEN_WIDTH / 2 - 120, SCREEN_HEIGHT - 120, 240, 60, "VOLVER AL MENU"))
 	{
 		App->state->ChangeState(GameState::MENU_MAIN);
 	}
 }
 
-// ------------------------------------------------------------
-// TIMER
-// ------------------------------------------------------------
 void ModuleUI::DrawRaceTimer()
 {
 	double time = App->scene_intro->GetRaceTime();
@@ -366,8 +316,11 @@ void ModuleUI::DrawRaceTimer()
 	int seconds = (int)time % 60;
 	int millis = (int)((time - (int)time) * 1000);
 
-	char buffer[32];
-	sprintf_s(buffer, "%02d:%02d.%03d", minutes, seconds, millis);
-
-	DrawText(buffer, SCREEN_WIDTH / 2 - 80, 20, 30, BLACK);
+	DrawText(
+		TextFormat("%02d:%02d.%03d", minutes, seconds, millis),
+		SCREEN_WIDTH / 2 - 80,
+		20,
+		30,
+		BLACK
+	);
 }
