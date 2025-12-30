@@ -7,22 +7,23 @@
 #include "ModuleGame.h"
 #include <math.h>
 #include <string>
+#include <algorithm>
+
+#include "raylib.h"
 
 ModuleUI::ModuleUI(Application* app, bool start_enabled) : Module(app, start_enabled)
 {
-    
 }
 
 // Destructor
 ModuleUI::~ModuleUI()
-{}
-
+{
+}
 
 bool ModuleUI::Init()
 {
 	LOG("Creating Renderer context");
 	bool ret = true;
-
 	return ret;
 }
 
@@ -31,7 +32,6 @@ update_status ModuleUI::PreUpdate()
 {
 	return UPDATE_CONTINUE;
 }
-
 
 update_status ModuleUI::Update()
 {
@@ -48,27 +48,25 @@ update_status ModuleUI::Update()
 	case GameState::MENU_OPTIONS:
 		UpdateOptionsMenu();
 		break;
+
 	case GameState::RACE:
 		SyncLeaderboard();
 		UpdateLeaderboardAnimation();
 		DrawLeaderboard();
 		DrawRaceTimer();
 		break;
+
 	case GameState::RESULTS:
 		DrawResultsScreen();
 		break;
 	}
 
-
 	return UPDATE_CONTINUE;
-
 }
 
 // PostUpdate
 update_status ModuleUI::PostUpdate()
 {
- 
-
 	return UPDATE_CONTINUE;
 }
 
@@ -78,6 +76,9 @@ bool ModuleUI::CleanUp()
 	return true;
 }
 
+// ------------------------------------------------------------
+// BUTTON
+// ------------------------------------------------------------
 bool ModuleUI::Button(int x, int y, int w, int h, const char* text)
 {
 	Vector2 mouse = { (float)GetMouseX(), (float)GetMouseY() };
@@ -85,34 +86,70 @@ bool ModuleUI::Button(int x, int y, int w, int h, const char* text)
 
 	bool hover = CheckCollisionPointRec(mouse, rect);
 
-	
-	App->renderer->DrawUIButton(x, y, w, h, text, hover);
+	Color bgNormal = { 90, 90, 90, 255 };
+	Color bgHover = { 120, 120, 120, 255 };
+	Color border = BLACK;
+	Color textCol = RAYWHITE;
 
-	if (hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-		return true;
+	Color bg = hover ? bgHover : bgNormal;
 
-	return false;
+	DrawRectangleRec(rect, bg);
+	DrawRectangleLines((int)rect.x, (int)rect.y, (int)rect.width, (int)rect.height, border);
+
+	if (hover)
+		DrawRectangleLinesEx(rect, 2.0f, YELLOW);
+
+	if (text && text[0] != '\0')
+	{
+		Font font = App->renderer->fuente;
+
+		float fontSize = (float)h * 0.45f;
+		if (fontSize < 18.0f) fontSize = 18.0f;
+		if (fontSize > 28.0f) fontSize = 28.0f;
+
+		const float spacing = 1.0f;
+
+		Vector2 textSize = MeasureTextEx(font, text, fontSize, spacing);
+
+		float textX = roundf(rect.x + (rect.width - textSize.x) * 0.5f);
+		float textY = roundf(rect.y + (rect.height - textSize.y) * 0.5f);
+
+		DrawTextEx(font, text, { textX, textY }, fontSize, spacing, textCol);
+	}
+
+	return hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 }
 
+// ------------------------------------------------------------
+// MAIN MENU (CENTERED BLOCK)
+// ------------------------------------------------------------
 void ModuleUI::UpdateMainMenu()
 {
-	int cx = SCREEN_WIDTH / 2 - 100;
+	const int buttonW = 260;
+	const int buttonH = 64;
+	const int spacing = 18;
 
-	if (Button(cx, 200, 200, 50, "JUGAR"))
+	const int cx = SCREEN_WIDTH / 2 - buttonW / 2;
+	const int centerY = SCREEN_HEIGHT / 2;
+
+	if (Button(cx, centerY - buttonH - spacing / 2, buttonW, buttonH, "JUGAR"))
 	{
 		App->state->ChangeState(GameState::MENU_PLAY);
 	}
 
-	if (Button(cx, 270, 200, 50, "CONFIG"))
+	if (Button(cx, centerY + spacing / 2, buttonW, buttonH, "CONFIG"))
 	{
 		App->state->ChangeState(GameState::MENU_OPTIONS);
 	}
 }
+
+// ------------------------------------------------------------
+// PLAY MENU
+// ------------------------------------------------------------
 void ModuleUI::UpdatePlayMenu()
 {
 	int centerX = SCREEN_WIDTH / 2;
 
-	// ---- TÍTULO ----
 	DrawText(
 		"SELECCIONA MAPA",
 		centerX - MeasureText("SELECCIONA MAPA", 24) / 2,
@@ -121,7 +158,6 @@ void ModuleUI::UpdatePlayMenu()
 		BLACK
 	);
 
-	// ---- GRID DE MAPAS ----
 	const int buttonW = 160;
 	const int buttonH = 50;
 	const int spacingX = 20;
@@ -139,37 +175,41 @@ void ModuleUI::UpdatePlayMenu()
 			int x = startX + col * (buttonW + spacingX);
 			int y = startY + row * (buttonH + spacingY);
 
-			std::string label = "";
-
-			if (Button(x, y, buttonW, buttonH, label.c_str()))
+			if (Button(x, y, buttonW, buttonH, ""))
 			{
-				// Aquí puedes guardar el mapa seleccionado si quieres
 				App->state->mapId = _mapId;
-
 				App->state->ChangeState(GameState::RACE);
 			}
-
 			_mapId++;
 		}
 	}
 
-	// ---- BOTÓN ATRÁS ----
-	if (Button(centerX - 100, startY + 2 * (buttonH + spacingY) + 40, 200, 50, "ATRAS"))
+	const int backW = 240;
+	const int backH = 60;
+
+	if (Button(centerX - backW / 2, SCREEN_HEIGHT - 120, backW, backH, "ATRAS"))
 	{
 		App->state->ChangeState(GameState::MENU_MAIN);
 	}
-
 }
+
+// ------------------------------------------------------------
+// OPTIONS MENU
+// ------------------------------------------------------------
 void ModuleUI::UpdateOptionsMenu()
 {
-	int cx = SCREEN_WIDTH / 2 - 100;
+	const int buttonW = 240;
+	const int buttonH = 60;
 
-	if (Button(cx, 260, 200, 50, "ATRAS"))
+	if (Button(SCREEN_WIDTH / 2 - buttonW / 2, SCREEN_HEIGHT / 2, buttonW, buttonH, "ATRAS"))
 	{
 		App->state->ChangeState(GameState::MENU_MAIN);
 	}
 }
 
+// ------------------------------------------------------------
+// RACE UI
+// ------------------------------------------------------------
 void ModuleUI::UpdateRaceUI()
 {
 	const std::vector<int>& leaderboard = App->scene_intro->leaderboard;
@@ -177,24 +217,24 @@ void ModuleUI::UpdateRaceUI()
 	int x = 20;
 	int y = 20;
 
-
 	DrawText("POSICIONES", x, y, 20, WHITE);
 	y += 30;
 
 	for (int i = 0; i < leaderboard.size(); ++i)
 	{
 		std::string text = std::to_string(i + 1) + " Coche " + std::to_string(leaderboard[i]);
-
 		DrawText(text.c_str(), x, y, 18, WHITE);
 		y += 22;
 	}
 }
 
+// ------------------------------------------------------------
+// LEADERBOARD
+// ------------------------------------------------------------
 void ModuleUI::SyncLeaderboard()
 {
 	const std::vector<int>& data = App->scene_intro->leaderboard;
 
-	// Crear entradas si no existen
 	if (leaderboardUI.size() != data.size())
 	{
 		leaderboardUI.clear();
@@ -210,7 +250,6 @@ void ModuleUI::SyncLeaderboard()
 		}
 	}
 
-	// Actualizar targetY según el orden actual
 	for (int i = 0; i < data.size(); ++i)
 	{
 		int id = data[i];
@@ -221,16 +260,13 @@ void ModuleUI::SyncLeaderboard()
 		if (it != leaderboardUI.end())
 		{
 			it->targetY = 50.0f + i * 24.0f;
-
 			it->lastRank = it->rank;
-			it->rank = i + 1;   
+			it->rank = i + 1;
 
 			if (it->lastRank != -1 && it->lastRank != it->rank)
 				it->flashTimer = 0.5f;
 		}
 	}
-
-
 }
 
 void ModuleUI::UpdateLeaderboardAnimation()
@@ -246,49 +282,42 @@ void ModuleUI::UpdateLeaderboardAnimation()
 
 void ModuleUI::DrawLeaderboard()
 {
-	int x = 20;  // columna de posiciones
-    int yStart = 50;
-    int spacing = 24;
+	int x = 20;
+	int yStart = 50;
+	int spacing = 24;
 
-    // Título
-    DrawText("POSICIONES", x, 20, 20, BLACK);
+	DrawText("POSICIONES", x, 20, 20, BLACK);
 
-    for (int i = 0; i < leaderboardUI.size(); ++i)
-    {
-        auto& e = leaderboardUI[i];
-        int y = yStart + i * spacing;
+	for (int i = 0; i < leaderboardUI.size(); ++i)
+	{
+		auto& e = leaderboardUI[i];
 
-        // Número de posición estático
-        DrawText(std::to_string(i + 1).c_str(), x, y, 18, BLACK);
+		DrawText(std::to_string(i + 1).c_str(), x, yStart + i * spacing, 18, BLACK);
 
-        // Texto del coche
-        std::string text = " Coche " + std::to_string(e.carId);
+		Color c = (e.carId == 0) ? YELLOW : BLACK;
 
-        Color c = BLACK;
-        if (e.carId == 0) // jugador
-            c = YELLOW;
+		if (e.flashTimer > 0)
+		{
+			c = (e.lastRank > i) ? GREEN : RED;
+			e.flashTimer -= App->deltaTime;
+		}
 
-        if (e.flashTimer > 0)
-        {
-            c = (e.lastRank > i) ? GREEN : RED;
-            e.flashTimer -= App->deltaTime;
-        }
-
-        // Dibujar coche a la derecha del número de posición
-        DrawText(text.c_str(), x + 30, (int)e.y, 18, c);
-    }
+		std::string text = " Coche " + std::to_string(e.carId);
+		DrawText(text.c_str(), x + 30, (int)e.y, 18, c);
+	}
 }
 
+// ------------------------------------------------------------
+// RESULTS
+// ------------------------------------------------------------
 void ModuleUI::DrawResultsScreen()
 {
 	int cx = SCREEN_WIDTH / 2;
 	int y = 80;
 
-	// Título
 	DrawText("RACE RESULTS", cx - 100, y, 30, BLACK);
 	y += 50;
 
-	// ---- CLASIFICACIÓN ----
 	DrawText("FINAL POSITIONS", 80, y, 22, BLACK);
 	y += 30;
 
@@ -296,14 +325,11 @@ void ModuleUI::DrawResultsScreen()
 
 	for (int i = 0; i < leaderboard.size(); ++i)
 	{
-		std::string line =
-			std::to_string(i + 1) + ". Car " + std::to_string(leaderboard[i]);
-
+		std::string line = std::to_string(i + 1) + ". Car " + std::to_string(leaderboard[i]);
 		DrawText(line.c_str(), 80, y, 18, BLACK);
 		y += 22;
 	}
 
-	// ---- TIEMPOS ----
 	y += 20;
 	DrawText("LAP TIMES", 80, y, 22, BLACK);
 	y += 30;
@@ -318,20 +344,20 @@ void ModuleUI::DrawResultsScreen()
 		y += 22;
 	}
 
-	// ---- TIEMPO TOTAL ----
 	y += 20;
 	char total[64];
-	sprintf_s(total, "Total Time: %.2f s",
-		App->scene_intro->results.totalTime);
-
+	sprintf_s(total, "Total Time: %.2f s", App->scene_intro->results.totalTime);
 	DrawText(total, 80, y, 22, DARKBLUE);
 
-	if (Button(cx - 100, SCREEN_HEIGHT - 100, 200, 50, "VOLVER AL MENU"))
+	if (Button(cx - 120, SCREEN_HEIGHT - 120, 240, 60, "VOLVER AL MENU"))
 	{
 		App->state->ChangeState(GameState::MENU_MAIN);
 	}
 }
 
+// ------------------------------------------------------------
+// TIMER
+// ------------------------------------------------------------
 void ModuleUI::DrawRaceTimer()
 {
 	double time = App->scene_intro->GetRaceTime();
