@@ -402,7 +402,7 @@ update_status ModuleGame::Update()
 			
 
 		if (IsKeyPressed(KEY_TWO)) {
-			CreateCar(GetMouseX() - App->renderer->camera.x, GetMouseY() - App->renderer->camera.y, 50, 100, 1.0f, 0, false,-1);
+			CreateCar(GetMouseX() - App->renderer->camera.x, GetMouseY() - App->renderer->camera.y, 50, 100, 1.0f, 0, true,-1);
 			printf("Coloco coche en: %f, %f\n", GetMouseX() - App->renderer->camera.x, GetMouseY() - App->renderer->camera.y);
 		}
 		if (IsKeyPressed(KEY_FOUR)) {

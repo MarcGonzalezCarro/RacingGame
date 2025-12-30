@@ -65,6 +65,10 @@ bool ModuleUI::Init()
 	LOG("Initializing UI module");
 
 	pressFx = App->audio->LoadFx("Assets/Audio/SFX/pressSound.wav");
+	mapThumbs[0] = LoadTexture("Assets/Map1/Map.png");
+	mapThumbs[1] = LoadTexture("Assets/Map2/Map.png");
+	mapThumbs[2] = LoadTexture("Assets/Map3/Map.png");
+	mapThumbs[3] = LoadTexture("Assets/Map4/Map.png");
 
 	return true;
 }
@@ -112,6 +116,9 @@ update_status ModuleUI::PostUpdate()
 
 bool ModuleUI::CleanUp()
 {
+	for (int i = 0; i < 4; ++i) {
+		UnloadTexture(mapThumbs[i]);
+	}
 	return true;
 }
 
@@ -181,35 +188,51 @@ void ModuleUI::UpdatePlayMenu()
 
 	DrawText("SELECCIONA MAPA",
 		centerX - MeasureText("SELECCIONA MAPA", 24) / 2,
-		120, 24, BLACK);
+		100, 24, BLACK);
 
-	const int buttonW = 160;
-	const int buttonH = 50;
-	const int spacingX = 20;
-	const int spacingY = 20;
+	const int buttonW = 220;
+	const int buttonH = 140;
+	const int spacingX = 30;
+	const int spacingY = 30;
 
-	int startX = centerX - (buttonW * 3 + spacingX * 2) / 2;
-	int startY = 180;
+	int startX = centerX - (buttonW * 2 + spacingX) / 2;
+	int startY = 160;
 
 	int mapId = 1;
 
 	for (int row = 0; row < 2; ++row)
 	{
-		for (int col = 0; col < 3; ++col)
+		for (int col = 0; col < 2; ++col)
 		{
-			if (Button(startX + col * (buttonW + spacingX),
+			int index = row * 2 + col;
+
+			if (ImageButton(
+				startX + col * (buttonW + spacingX),
 				startY + row * (buttonH + spacingY),
-				buttonW, buttonH, ""))
+				buttonW, buttonH,
+				mapThumbs[index]))
 			{
 				App->state->mapId = mapId;
 				App->state->ChangeState(GameState::RACE);
 			}
+
+			// Texto opcional del mapa
+			DrawText(
+				TextFormat("MAPA %d", mapId),
+				startX + col * (buttonW + spacingX) + 10,
+				startY + row * (buttonH + spacingY) + buttonH - 24,
+				18,
+				BLACK
+			);
+
 			mapId++;
 		}
 	}
 
-	if (Button(centerX - 120, SCREEN_HEIGHT - 120, 240, 60, "ATRAS"))
+	if (Button(centerX - 120, SCREEN_HEIGHT - 100, 240, 50, "ATRAS"))
+	{
 		App->state->ChangeState(GameState::MENU_MAIN);
+	}
 }
 
 void ModuleUI::UpdateOptionsMenu()
@@ -391,6 +414,27 @@ void ModuleUI::DrawRaceTimer()
 
 	DrawText(TextFormat("%02d:%02d.%03d", minutes, seconds, millis),
 		SCREEN_WIDTH / 2 - 80, 20, 30, BLACK);
+}
+
+bool ModuleUI::ImageButton(int x, int y, int w, int h, Texture2D& tex)
+{
+	Vector2 mouse = { (float)GetMouseX(), (float)GetMouseY() };
+	Rectangle rect = { (float)x, (float)y, (float)w, (float)h };
+
+	bool hover = CheckCollisionPointRec(mouse, rect);
+
+	// Fondo
+	DrawRectangle(x, y, w, h, hover ? LIGHTGRAY : RAYWHITE);
+
+	// Imagen centrada
+	Rectangle src = { 0, 0, (float)tex.width, (float)tex.height };
+	Rectangle dst = { (float)x, (float)y, (float)w, (float)h };
+	DrawTexturePro(tex, src, dst, { 0,0 }, 0, WHITE);
+
+	// Borde
+	DrawRectangleLines(x, y, w, h, BLACK);
+
+	return hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 }
 
 void ModuleUI::UpdateRaceUI()

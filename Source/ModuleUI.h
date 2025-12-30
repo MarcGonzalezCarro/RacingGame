@@ -41,11 +41,13 @@ public:
 	void DrawResultsScreen();
 	void DrawRaceTimer();
 
+	bool ImageButton(int x, int y, int w, int h, Texture2D& tex);
+
 private:
 	std::vector<LeaderboardEntryUI> leaderboardUI;
 
 	unsigned int pressFx = 0;
-
+	Texture2D mapThumbs[4];
 	bool draggingSfx = false;
 	bool draggingMusic = false;
 };
