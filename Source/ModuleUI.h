@@ -4,7 +4,6 @@
 #include "Globals.h"
 #include <vector>
 
-// UI data used to animate leaderboard entries
 struct LeaderboardEntryUI
 {
 	int carId = -1;
@@ -28,28 +27,25 @@ public:
 	update_status PostUpdate();
 	bool CleanUp();
 
-	// Generic UI button. Returns true when clicked
 	bool Button(int x, int y, int w, int h, const char* text);
 
-	// Menu states
 	void UpdateMainMenu();
 	void UpdatePlayMenu();
 	void UpdateOptionsMenu();
 
-	// Race UI
 	void UpdateRaceUI();
 	void SyncLeaderboard();
 	void UpdateLeaderboardAnimation();
 	void DrawLeaderboard();
 
-	// Results and timer
 	void DrawResultsScreen();
 	void DrawRaceTimer();
 
 private:
-	// Leaderboard visual data
 	std::vector<LeaderboardEntryUI> leaderboardUI;
 
-	// UI sound effects
 	unsigned int pressFx = 0;
+
+	bool draggingSfx = false;
+	bool draggingMusic = false;
 };

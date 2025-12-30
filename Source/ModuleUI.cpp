@@ -13,6 +13,45 @@
 
 #include "raylib.h"
 
+static float Clamp01(float v)
+{
+	if (v < 0.0f) return 0.0f;
+	if (v > 1.0f) return 1.0f;
+	return v;
+}
+
+static float Slider01(Rectangle bar, float value01, bool& dragging)
+{
+	Vector2 mouse = { (float)GetMouseX(), (float)GetMouseY() };
+	bool hovered = CheckCollisionPointRec(mouse, bar);
+
+	if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && hovered)
+		dragging = true;
+
+	if (dragging && IsMouseButtonDown(MOUSE_LEFT_BUTTON))
+	{
+		float t = (mouse.x - bar.x) / bar.width;
+		value01 = Clamp01(t);
+	}
+
+	if (dragging && IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
+		dragging = false;
+
+	DrawRectangleRec(bar, Color{ 70, 70, 70, 255 });
+	DrawRectangleLines((int)bar.x, (int)bar.y, (int)bar.width, (int)bar.height, BLACK);
+
+	Rectangle fill = bar;
+	fill.width = bar.width * value01;
+	DrawRectangleRec(fill, Color{ 120, 120, 120, 255 });
+
+	float handleX = roundf(bar.x + bar.width * value01);
+	Rectangle handle = { handleX - 6.0f, bar.y - 4.0f, 12.0f, bar.height + 8.0f };
+	DrawRectangleRec(handle, Color{ 200, 200, 200, 255 });
+	DrawRectangleLines((int)handle.x, (int)handle.y, (int)handle.width, (int)handle.height, BLACK);
+
+	return value01;
+}
+
 ModuleUI::ModuleUI(Application* app, bool start_enabled) : Module(app, start_enabled)
 {
 }
@@ -25,7 +64,6 @@ bool ModuleUI::Init()
 {
 	LOG("Initializing UI module");
 
-	// Load UI button press sound once
 	pressFx = App->audio->LoadFx("Assets/Audio/SFX/pressSound.wav");
 
 	return true;
@@ -77,9 +115,6 @@ bool ModuleUI::CleanUp()
 	return true;
 }
 
-// ------------------------------------------------------------
-// Generic button rendering and interaction
-// ------------------------------------------------------------
 bool ModuleUI::Button(int x, int y, int w, int h, const char* text)
 {
 	Vector2 mouse = { (float)GetMouseX(), (float)GetMouseY() };
@@ -87,21 +122,17 @@ bool ModuleUI::Button(int x, int y, int w, int h, const char* text)
 
 	bool hover = CheckCollisionPointRec(mouse, rect);
 
-	Color bgNormal = { 90, 90, 90, 255 };
-	Color bgHover = { 120, 120, 120, 255 };
+	Color bgNormal = Color{ 90, 90, 90, 255 };
+	Color bgHover = Color{ 120, 120, 120, 255 };
 	Color border = BLACK;
 	Color textCol = RAYWHITE;
 
 	DrawRectangleRec(rect, hover ? bgHover : bgNormal);
 	DrawRectangleLines((int)rect.x, (int)rect.y, (int)rect.width, (int)rect.height, border);
 
-	// Highlight when hovered
 	if (hover)
-	{
 		DrawRectangleLinesEx(rect, 2.0f, YELLOW);
-	}
 
-	// Draw centered text if provided
 	if (text && text[0] != '\0')
 	{
 		Font font = App->renderer->fuente;
@@ -111,16 +142,14 @@ bool ModuleUI::Button(int x, int y, int w, int h, const char* text)
 		if (fontSize > 28.0f) fontSize = 28.0f;
 
 		const float spacing = 1.0f;
-
 		Vector2 textSize = MeasureTextEx(font, text, fontSize, spacing);
 
 		float textX = roundf(rect.x + (rect.width - textSize.x) * 0.5f);
 		float textY = roundf(rect.y + (rect.height - textSize.y) * 0.5f);
 
-		DrawTextEx(font, text, { textX, textY }, fontSize, spacing, textCol);
+		DrawTextEx(font, text, Vector2{ textX, textY }, fontSize, spacing, textCol);
 	}
 
-	// Handle click
 	if (hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
 	{
 		App->audio->PlayFx(pressFx);
@@ -130,9 +159,6 @@ bool ModuleUI::Button(int x, int y, int w, int h, const char* text)
 	return false;
 }
 
-// ------------------------------------------------------------
-// Main menu
-// ------------------------------------------------------------
 void ModuleUI::UpdateMainMenu()
 {
 	const int buttonW = 260;
@@ -143,30 +169,19 @@ void ModuleUI::UpdateMainMenu()
 	int centerY = SCREEN_HEIGHT / 2;
 
 	if (Button(x, centerY - buttonH - spacing / 2, buttonW, buttonH, "JUGAR"))
-	{
 		App->state->ChangeState(GameState::MENU_PLAY);
-	}
 
 	if (Button(x, centerY + spacing / 2, buttonW, buttonH, "CONFIG"))
-	{
 		App->state->ChangeState(GameState::MENU_OPTIONS);
-	}
 }
 
-// ------------------------------------------------------------
-// Map selection menu
-// ------------------------------------------------------------
 void ModuleUI::UpdatePlayMenu()
 {
 	int centerX = SCREEN_WIDTH / 2;
 
-	DrawText(
-		"SELECCIONA MAPA",
+	DrawText("SELECCIONA MAPA",
 		centerX - MeasureText("SELECCIONA MAPA", 24) / 2,
-		120,
-		24,
-		BLACK
-	);
+		120, 24, BLACK);
 
 	const int buttonW = 160;
 	const int buttonH = 50;
@@ -182,12 +197,9 @@ void ModuleUI::UpdatePlayMenu()
 	{
 		for (int col = 0; col < 3; ++col)
 		{
-			if (Button(
-				startX + col * (buttonW + spacingX),
+			if (Button(startX + col * (buttonW + spacingX),
 				startY + row * (buttonH + spacingY),
-				buttonW,
-				buttonH,
-				""))
+				buttonW, buttonH, ""))
 			{
 				App->state->mapId = mapId;
 				App->state->ChangeState(GameState::RACE);
@@ -197,25 +209,84 @@ void ModuleUI::UpdatePlayMenu()
 	}
 
 	if (Button(centerX - 120, SCREEN_HEIGHT - 120, 240, 60, "ATRAS"))
-	{
 		App->state->ChangeState(GameState::MENU_MAIN);
-	}
 }
 
-// ------------------------------------------------------------
-// Options menu
-// ------------------------------------------------------------
 void ModuleUI::UpdateOptionsMenu()
 {
-	if (Button(SCREEN_WIDTH / 2 - 120, SCREEN_HEIGHT / 2, 240, 60, "ATRAS"))
+	const int panelW = 520;
+	const int panelH = 320;
+	const int panelX = SCREEN_WIDTH / 2 - panelW / 2;
+	const int panelY = SCREEN_HEIGHT / 2 - panelH / 2;
+
+	DrawRectangle(panelX, panelY, panelW, panelH, Color{ 0, 0, 0, 120 });
+	DrawRectangleLines(panelX, panelY, panelW, panelH, BLACK);
+
+	DrawText("CONFIGURACION", panelX + 20, panelY + 20, 28, RAYWHITE);
+
+	// SFX Volume
 	{
-		App->state->ChangeState(GameState::MENU_MAIN);
+		float sfx = App->audio->GetSfxVolume();
+
+		DrawText("VOLUMEN SFX", panelX + 20, panelY + 80, 20, RAYWHITE);
+
+		Rectangle bar = Rectangle{ (float)(panelX + 220), (float)(panelY + 82), 250.0f, 18.0f };
+		sfx = Slider01(bar, sfx, draggingSfx);
+		App->audio->SetSfxVolume(sfx);
+
+		int percent = (int)roundf(sfx * 100.0f);
+		DrawText(TextFormat("%d%%", percent), panelX + 480, panelY + 78, 20, RAYWHITE);
 	}
+
+	// Music Enabled Toggle
+	{
+		bool enabled = App->audio->IsMusicEnabled();
+		const char* label = enabled ? "MUSICA: ON" : "MUSICA: OFF";
+
+		if (Button(panelX + 20, panelY + 130, 200, 56, label))
+		{
+			bool newEnabled = !enabled;
+			App->audio->SetMusicEnabled(newEnabled);
+
+			// If music is enabled again, resume the appropriate track for the current context
+			if (newEnabled)
+			{
+				GameState st = App->state->GetState();
+
+				// Menus use menuSong
+				if (st == GameState::MENU_MAIN || st == GameState::MENU_PLAY || st == GameState::MENU_OPTIONS)
+				{
+					App->audio->PlayMusic("Assets/Audio/SFX/menuSong.wav", 0.0f, true);
+				}
+				// Results uses endSong
+				else if (st == GameState::RESULTS)
+				{
+					App->audio->PlayMusic("Assets/Audio/SFX/endSong.wav", 0.0f, false);
+				}
+				// Race: keep silent (by design)
+			}
+		}
+
+	}
+
+	// Music Volume
+	{
+		float mv = App->audio->GetMusicVolume();
+
+		DrawText("VOLUMEN MUSICA", panelX + 20, panelY + 210, 20, RAYWHITE);
+
+		Rectangle bar = Rectangle{ (float)(panelX + 220), (float)(panelY + 212), 250.0f, 18.0f };
+		mv = Slider01(bar, mv, draggingMusic);
+		App->audio->SetMusicVolume(mv);
+
+		int percent = (int)roundf(mv * 100.0f);
+		DrawText(TextFormat("%d%%", percent), panelX + 480, panelY + 208, 20, RAYWHITE);
+	}
+
+	if (Button(panelX + panelW - 260, panelY + panelH - 76, 240, 56, "ATRAS"))
+		App->state->ChangeState(GameState::MENU_MAIN);
 }
 
-// ------------------------------------------------------------
-// Leaderboard logic and rendering
-// ------------------------------------------------------------
 void ModuleUI::SyncLeaderboard()
 {
 	const auto& data = App->scene_intro->leaderboard;
@@ -224,24 +295,36 @@ void ModuleUI::SyncLeaderboard()
 	{
 		leaderboardUI.clear();
 
-		for (int i = 0; i < data.size(); ++i)
+		for (int i = 0; i < (int)data.size(); ++i)
 		{
-			leaderboardUI.push_back({ data[i], 20.0f, 20.0f, 8.0f });
+			LeaderboardEntryUI entry;
+			entry.carId = data[i];
+			entry.y = 20.0f + (float)i * 24.0f;
+			entry.targetY = entry.y;
+			entry.animSpeed = 8.0f;
+			entry.rank = i + 1;
+			entry.lastRank = -1;
+			entry.flashTimer = 0.0f;
+			leaderboardUI.push_back(entry);
 		}
 	}
 
-	for (int i = 0; i < data.size(); ++i)
+	for (int i = 0; i < (int)data.size(); ++i)
 	{
+		int id = data[i];
+
 		for (auto& e : leaderboardUI)
 		{
-			if (e.carId == data[i])
+			if (e.carId == id)
 			{
-				e.targetY = 50.0f + i * 24.0f;
+				e.targetY = 50.0f + (float)i * 24.0f;
 				e.lastRank = e.rank;
 				e.rank = i + 1;
 
 				if (e.lastRank != -1 && e.lastRank != e.rank)
 					e.flashTimer = 0.5f;
+
+				break;
 			}
 		}
 	}
@@ -260,7 +343,7 @@ void ModuleUI::DrawLeaderboard()
 {
 	DrawText("POSICIONES", 20, 20, 20, BLACK);
 
-	for (int i = 0; i < leaderboardUI.size(); ++i)
+	for (int i = 0; i < (int)leaderboardUI.size(); ++i)
 	{
 		auto& e = leaderboardUI[i];
 
@@ -277,9 +360,6 @@ void ModuleUI::DrawLeaderboard()
 	}
 }
 
-// ------------------------------------------------------------
-// Results screen and race timer
-// ------------------------------------------------------------
 void ModuleUI::DrawResultsScreen()
 {
 	int y = 80;
@@ -290,22 +370,15 @@ void ModuleUI::DrawResultsScreen()
 	DrawText("FINAL POSITIONS", 80, y, 22, BLACK);
 	y += 30;
 
-	for (int i = 0; i < App->scene_intro->results.finalLeaderboard.size(); ++i)
+	for (int i = 0; i < (int)App->scene_intro->results.finalLeaderboard.size(); ++i)
 	{
-		DrawText(
-			TextFormat("%d. Car %d", i + 1, App->scene_intro->results.finalLeaderboard[i]),
-			80,
-			y,
-			18,
-			BLACK
-		);
+		DrawText(TextFormat("%d. Car %d", i + 1, App->scene_intro->results.finalLeaderboard[i]),
+			80, y, 18, BLACK);
 		y += 22;
 	}
 
 	if (Button(SCREEN_WIDTH / 2 - 120, SCREEN_HEIGHT - 120, 240, 60, "VOLVER AL MENU"))
-	{
 		App->state->ChangeState(GameState::MENU_MAIN);
-	}
 }
 
 void ModuleUI::DrawRaceTimer()
@@ -316,11 +389,10 @@ void ModuleUI::DrawRaceTimer()
 	int seconds = (int)time % 60;
 	int millis = (int)((time - (int)time) * 1000);
 
-	DrawText(
-		TextFormat("%02d:%02d.%03d", minutes, seconds, millis),
-		SCREEN_WIDTH / 2 - 80,
-		20,
-		30,
-		BLACK
-	);
+	DrawText(TextFormat("%02d:%02d.%03d", minutes, seconds, millis),
+		SCREEN_WIDTH / 2 - 80, 20, 30, BLACK);
+}
+
+void ModuleUI::UpdateRaceUI()
+{
 }
