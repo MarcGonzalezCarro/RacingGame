@@ -412,20 +412,20 @@ void ModuleUI::DrawLeaderboard()
 void ModuleUI::DrawResultsScreen()
 {
 	const int panelW = 560;
-	const int panelH = 420;
+	const int panelH = 500; // un poco más alto para los tiempos
 	const int panelX = SCREEN_WIDTH / 2 - panelW / 2;
 	const int panelY = SCREEN_HEIGHT / 2 - panelH / 2;
 
 	// Panel fondo
-	DrawRectangle(panelX, panelY, panelW, panelH, Color{ 0, 0, 0, 120 });
+	DrawRectangle(panelX, panelY, panelW, panelH, Color{ 0, 0, 0, 180 });
 	DrawRectangleLines(panelX, panelY, panelW, panelH, BLACK);
 
 	int x = panelX + 20;
 	int y = panelY + 20;
 
 	// Título
-	DrawText("RACE RESULTS", panelX + panelW / 2 - MeasureText("RACE RESULTS", 28) / 2,
-		y, 28, RAYWHITE);
+	const char* title = "RACE RESULTS";
+	DrawText(title, panelX + panelW / 2 - MeasureText(title, 28) / 2, y, 28, RAYWHITE);
 	y += 50;
 
 	// Clasificación
@@ -435,19 +435,40 @@ void ModuleUI::DrawResultsScreen()
 	for (int i = 0; i < (int)App->scene_intro->results.finalLeaderboard.size(); ++i)
 	{
 		DrawText(
-			TextFormat("%d. Car %d",
-				i + 1,
-				App->scene_intro->results.finalLeaderboard[i]),
+			TextFormat("%d. Car %d", i + 1, App->scene_intro->results.finalLeaderboard[i]),
 			x, y, 18, RAYWHITE
 		);
 		y += 22;
 	}
 
-	// Botón volver
-	if (Button(panelX + panelW / 2 - 120,
-		panelY + panelH - 76,
-		240, 56,
-		"VOLVER AL MENU"))
+	y += 20;
+
+	// Tiempos de vuelta
+	DrawText("LAP TIMES (s)", x, y, 22, RAYWHITE);
+	y += 30;
+
+	const auto& lapTimes = App->scene_intro->results.lapTimes;
+	double totalTime = App->scene_intro->results.totalTime;
+
+	for (int i = 0; i < lapTimes.size(); ++i)
+	{
+		DrawText(
+			TextFormat("Lap %d: %.2f", i + 1, lapTimes[i]),
+			x, y, 18, RAYWHITE
+		);
+		y += 22;
+	}
+
+	y += 10;
+
+	// Tiempo total
+	DrawText(
+		TextFormat("TOTAL TIME: %.2f s", totalTime),
+		x, y, 20, YELLOW
+	);
+
+	// Botón volver al menú
+	if (Button(panelX + panelW / 2 - 120, panelY + panelH - 76, 240, 56, "VOLVER AL MENU"))
 	{
 		App->state->ChangeState(GameState::MENU_MAIN);
 	}
