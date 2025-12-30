@@ -376,7 +376,7 @@ void ModuleGame::CreateRace(int x, int y, int w, int h, float scale, int dir) {
 update_status ModuleGame::Update()
 {
 
-	if (IsKeyPressed(KEY_ONE)) {
+	if (IsKeyPressed(KEY_F1)) {
 
 		debug = !debug;
 	}
