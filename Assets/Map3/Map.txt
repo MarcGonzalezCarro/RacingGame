@@ -1,6 +1,6 @@
 # --- RACE SETUP ---
 START 1148 1208
-CAR 50 100 1.0 1
+CAR 50 100 1.0 0
 
 # --- WAYPOINTS ---
 # x y width height angle

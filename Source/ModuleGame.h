@@ -70,6 +70,7 @@ public:
 
 	bool onRace = false;
 	bool onMenu = true;
+	bool onResults = false;
 	bool debug = false;
 
 	uint32 bonus_fx;

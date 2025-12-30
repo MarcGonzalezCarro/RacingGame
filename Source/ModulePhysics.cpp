@@ -7,6 +7,23 @@
 
 #include <math.h>
 
+class QueryCallback : public b2QueryCallback
+{
+public:
+	b2Vec2 point;
+	b2Fixture* fixture = nullptr;
+
+	bool ReportFixture(b2Fixture* f) override
+	{
+		if (f->TestPoint(point))
+		{
+			fixture = f;
+			return false; // stop query
+		}
+		return true;
+	}
+};
+
 ModulePhysics::ModulePhysics(Application* app, bool start_enabled) : Module(app, start_enabled)
 {
 	world = NULL;
@@ -25,6 +42,8 @@ bool ModulePhysics::Start()
 
 	world = new b2World(b2Vec2(GRAVITY_X, -GRAVITY_Y));
 	world->SetContactListener(this);
+	b2BodyDef bd;
+	ground = world->CreateBody(&bd);
 
 	return true;
 }
@@ -660,4 +679,83 @@ void ModulePhysics::BeginContact(b2Contact* contact)
 
 	if (physB && physB->listener != NULL)
 		physB->listener->OnCollision(physB, physA);
+}
+void ModulePhysics::BeginMouseDrag(int mouseX, int mouseY)
+{
+	if (mouse_joint != nullptr)
+		return;
+
+	// Convertir a mundo físico
+	b2Vec2 p(
+		PIXEL_TO_METERS(mouseX),
+		PIXEL_TO_METERS(mouseY)
+	);
+
+	QueryCallback query;
+	query.point = p;
+
+	b2AABB aabb;
+	aabb.lowerBound = p - b2Vec2(0.001f, 0.001f);
+	aabb.upperBound = p + b2Vec2(0.001f, 0.001f);
+
+	world->QueryAABB(&query, aabb);
+
+	if (query.fixture)
+	{
+		b2Body* body = query.fixture->GetBody();
+
+		b2MouseJointDef md;
+		md.bodyA = ground;
+		md.bodyB = body;
+		md.target = p;
+		md.maxForce = 1000.0f * body->GetMass();
+		md.stiffness = 1000.0f;
+		md.damping = 30.0f;
+
+		mouse_joint = (b2MouseJoint*)world->CreateJoint(&md);
+		body->SetAwake(true);
+	}
+}
+void ModulePhysics::UpdateMouseDrag(int mouseX, int mouseY)
+{
+	if (mouse_joint == nullptr)
+		return;
+
+	b2Vec2 p(
+		PIXEL_TO_METERS(mouseX),
+		PIXEL_TO_METERS(mouseY)
+	);
+
+	mouse_joint->SetTarget(p);
+}
+void ModulePhysics::EndMouseDrag()
+{
+	if (mouse_joint)
+	{
+		world->DestroyJoint(mouse_joint);
+		mouse_joint = nullptr;
+	}
+}
+
+void ModulePhysics::DrawMouseJointDebug()
+{
+	if (mouse_joint == nullptr)
+		return;
+
+	b2Vec2 p1 = mouse_joint->GetAnchorA();
+	b2Vec2 p2 = mouse_joint->GetAnchorB();
+
+	Vector2 a = {
+		METERS_TO_PIXELS(p1.x) + App->renderer->camera.x,
+		METERS_TO_PIXELS(p1.y) + App->renderer->camera.y
+	};
+
+	Vector2 b = {
+		METERS_TO_PIXELS(p2.x) + App->renderer->camera.x,
+		METERS_TO_PIXELS(p2.y) + App->renderer->camera.y
+	};
+
+	DrawLineV(a, b, RED);
+	DrawCircleV(a, 4, RED);
+	DrawCircleV(b, 4, RED);
 }

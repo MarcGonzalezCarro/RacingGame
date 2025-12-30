@@ -68,6 +68,12 @@ public:
 	// b2ContactListener ---
 	void BeginContact(b2Contact* contact);
 
+	void BeginMouseDrag(int mouseX, int mouseY);
+
+	void UpdateMouseDrag(int mouseX, int mouseY);
+
+	void EndMouseDrag();
+	void DrawMouseJointDebug();
 private:
 	float accumulator = 0.0f;
 	bool debug;

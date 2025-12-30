@@ -175,6 +175,8 @@ void ModuleUI::UpdateMainMenu()
 	int x = SCREEN_WIDTH / 2 - buttonW / 2;
 	int centerY = SCREEN_HEIGHT / 2;
 
+	DrawText("Physics GP",SCREEN_WIDTH/2 - 200, 100, 80, BLACK);
+
 	if (Button(x, centerY - buttonH - spacing / 2, buttonW, buttonH, "JUGAR"))
 		App->state->ChangeState(GameState::MENU_PLAY);
 
@@ -186,9 +188,11 @@ void ModuleUI::UpdatePlayMenu()
 {
 	int centerX = SCREEN_WIDTH / 2;
 
-	DrawText("SELECCIONA MAPA",
+	DrawText(
+		"SELECCIONA MAPA",
 		centerX - MeasureText("SELECCIONA MAPA", 24) / 2,
-		100, 24, BLACK);
+		100, 24, BLACK
+	);
 
 	const int buttonW = 220;
 	const int buttonH = 140;
@@ -198,6 +202,8 @@ void ModuleUI::UpdatePlayMenu()
 	int startX = centerX - (buttonW * 2 + spacingX) / 2;
 	int startY = 160;
 
+	Vector2 mouse = { (float)GetMouseX(), (float)GetMouseY() };
+
 	int mapId = 1;
 
 	for (int row = 0; row < 2; ++row)
@@ -206,21 +212,40 @@ void ModuleUI::UpdatePlayMenu()
 		{
 			int index = row * 2 + col;
 
-			if (ImageButton(
-				startX + col * (buttonW + spacingX),
-				startY + row * (buttonH + spacingY),
-				buttonW, buttonH,
-				mapThumbs[index]))
+			int x = startX + col * (buttonW + spacingX);
+			int y = startY + row * (buttonH + spacingY);
+
+			Rectangle rect = {
+				(float)x,
+				(float)y,
+				(float)buttonW,
+				(float)buttonH
+			};
+
+			bool hover = CheckCollisionPointRec(mouse, rect);
+
+			// Botón imagen
+			if (ImageButton(x, y, buttonW, buttonH, mapThumbs[index]))
 			{
 				App->state->mapId = mapId;
 				App->state->ChangeState(GameState::RACE);
 			}
 
-			// Texto opcional del mapa
+			// Borde amarillo en hover
+			if (hover)
+			{
+				DrawRectangleLinesEx(rect, 3, YELLOW);
+			}
+			else
+			{
+				DrawRectangleLinesEx(rect, 2, BLACK);
+			}
+
+			// Texto del mapa
 			DrawText(
 				TextFormat("MAPA %d", mapId),
-				startX + col * (buttonW + spacingX) + 10,
-				startY + row * (buttonH + spacingY) + buttonH - 24,
+				x + 10,
+				y + buttonH - 24,
 				18,
 				BLACK
 			);
@@ -229,6 +254,7 @@ void ModuleUI::UpdatePlayMenu()
 		}
 	}
 
+	// Botón atrás
 	if (Button(centerX - 120, SCREEN_HEIGHT - 100, 240, 50, "ATRAS"))
 	{
 		App->state->ChangeState(GameState::MENU_MAIN);
@@ -385,23 +411,46 @@ void ModuleUI::DrawLeaderboard()
 
 void ModuleUI::DrawResultsScreen()
 {
-	int y = 80;
+	const int panelW = 560;
+	const int panelH = 420;
+	const int panelX = SCREEN_WIDTH / 2 - panelW / 2;
+	const int panelY = SCREEN_HEIGHT / 2 - panelH / 2;
 
-	DrawText("RACE RESULTS", SCREEN_WIDTH / 2 - 100, y, 30, BLACK);
+	// Panel fondo
+	DrawRectangle(panelX, panelY, panelW, panelH, Color{ 0, 0, 0, 120 });
+	DrawRectangleLines(panelX, panelY, panelW, panelH, BLACK);
+
+	int x = panelX + 20;
+	int y = panelY + 20;
+
+	// Título
+	DrawText("RACE RESULTS", panelX + panelW / 2 - MeasureText("RACE RESULTS", 28) / 2,
+		y, 28, RAYWHITE);
 	y += 50;
 
-	DrawText("FINAL POSITIONS", 80, y, 22, BLACK);
+	// Clasificación
+	DrawText("FINAL POSITIONS", x, y, 22, RAYWHITE);
 	y += 30;
 
 	for (int i = 0; i < (int)App->scene_intro->results.finalLeaderboard.size(); ++i)
 	{
-		DrawText(TextFormat("%d. Car %d", i + 1, App->scene_intro->results.finalLeaderboard[i]),
-			80, y, 18, BLACK);
+		DrawText(
+			TextFormat("%d. Car %d",
+				i + 1,
+				App->scene_intro->results.finalLeaderboard[i]),
+			x, y, 18, RAYWHITE
+		);
 		y += 22;
 	}
 
-	if (Button(SCREEN_WIDTH / 2 - 120, SCREEN_HEIGHT - 120, 240, 60, "VOLVER AL MENU"))
+	// Botón volver
+	if (Button(panelX + panelW / 2 - 120,
+		panelY + panelH - 76,
+		240, 56,
+		"VOLVER AL MENU"))
+	{
 		App->state->ChangeState(GameState::MENU_MAIN);
+	}
 }
 
 void ModuleUI::DrawRaceTimer()

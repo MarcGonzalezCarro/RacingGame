@@ -360,12 +360,49 @@ void  ModuleGame::CreateCar(int x, int y, int w, int h, float scale, int dir, bo
 
 void ModuleGame::CreateRace(int x, int y, int w, int h, float scale, int dir) {
 
-	for (int i = 0; i < 10; ++i)
-	{
-		int ox = (i / 2) * METERS_TO_PIXELS(3);
-		int oy = (i % 2) * METERS_TO_PIXELS(2);
+	const int carsPerRow = 2;
+	const float rowSpacing = METERS_TO_PIXELS(3);
+	const float colSpacing = METERS_TO_PIXELS(2);
 
-		CreateCar(x + ox, y + oy, w, h, scale, dir, i == 0, i);
+	for (int i = 0; i < 6; ++i)
+	{
+		int row = i / carsPerRow;
+		int col = i % carsPerRow;
+
+		float ox = 0.0f;
+		float oy = 0.0f;
+
+		switch (dir)
+		{
+		case 0: // UP
+			ox = (col - 0.5f) * colSpacing;
+			oy = row * rowSpacing;
+			break;
+
+		case 2: // DOWN
+			ox = (col - 0.5f) * colSpacing;
+			oy = -row * rowSpacing;
+			break;
+
+		case 1: // RIGHT
+			ox = -row * rowSpacing;
+			oy = (col - 0.5f) * colSpacing;
+			break;
+
+		case 3: // LEFT
+			ox = row * rowSpacing;
+			oy = (col - 0.5f) * colSpacing;
+			break;
+		}
+
+		CreateCar(
+			x + (int)ox,
+			y + (int)oy,
+			w, h, scale,
+			dir,
+			i == 0,
+			i
+		);
 	}
 
 	onMenu = false;
@@ -381,7 +418,7 @@ update_status ModuleGame::Update()
 		debug = !debug;
 	}
 
-	if (onRace || onMenu) {
+	if (onRace || onMenu || onResults) {
 		if (onRace) {
 			UpdateLeaderboard();
 		}
@@ -389,29 +426,31 @@ update_status ModuleGame::Update()
 		App->renderer->Draw(map,0,0,0,0,0,0,4);
 		if (debug) {
 			DrawWaypointsDebug();
-		}
-		// Activar rayo con espacio
-		if (IsKeyPressed(KEY_SPACE))
-		{
-			ray_on = !ray_on;
-			ray.x = GetMouseX();
-			ray.y = GetMouseY();
-		}
-		// Crear entidades
-		
+			App->physics->DrawMouseJointDebug();
+
+			if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+			{
+				App->physics->BeginMouseDrag(
+					GetMouseX() - App->renderer->camera.x,
+					GetMouseY() - App->renderer->camera.y
+				);
+			}
+
+			if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
+			{
+				App->physics->UpdateMouseDrag(
+					GetMouseX() - App->renderer->camera.x,
+					GetMouseY() - App->renderer->camera.y
+				);
+			}
+
+			if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
+			{
+				App->physics->EndMouseDrag();
+			}
 			
-
-		if (IsKeyPressed(KEY_TWO)) {
-			CreateCar(GetMouseX() - App->renderer->camera.x, GetMouseY() - App->renderer->camera.y, 50, 100, 1.0f, 0, true,-1);
-			printf("Coloco coche en: %f, %f\n", GetMouseX() - App->renderer->camera.x, GetMouseY() - App->renderer->camera.y);
 		}
-		if (IsKeyPressed(KEY_FOUR)) {
-
-			CreateRace(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 50, 100, 1.0f, 3);
-
-		}
-
-		// Procesar input para cada coche
+		
 		for (PhysicEntity* entity : entities)
 		{
 			Car* car = dynamic_cast<Car*>(entity);
@@ -467,7 +506,7 @@ update_status ModuleGame::Update()
 			}
 			else
 			{
-				if (onMenu) {
+				if (onMenu || onResults) {
 					int x, y;
 					car->body->GetPhysicPosition(x, y);
 					App->renderer->camera.x = SCREEN_WIDTH / 2 - x;

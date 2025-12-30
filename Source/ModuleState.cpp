@@ -172,10 +172,14 @@ void ModuleState::OnEnterResults()
 		App->audio->PlayMusic("Assets/Audio/SFX/endSong.wav", 0.0f, false);
 		endSongPlayed = true;
 	}
-
+	App->scene_intro->CreateMockUpCar();
+	App->scene_intro->LoadWaypoints(mapId, false);
+	App->scene_intro->onResults = true;
 }
 
 void ModuleState::OnExitResults()
 {
-	printf("EXIT RESULTS\n");
+	//printf("EXIT RESULTS\n");
+	App->scene_intro->DestroyMockUpCar();
+	App->scene_intro->onResults = false;
 }
