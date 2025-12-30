@@ -30,6 +30,8 @@ public:
 private:
 	GameState currentState = GameState::MENU_MAIN;
 	GameState nextState = GameState::MENU_MAIN;
+	bool menuMusicPlaying = false;
+	bool endSongPlayed = false;
 
 	void ProcessStateChange();
 
@@ -44,5 +46,5 @@ private:
 	void OnExitResults();
 
 
-	
+
 };

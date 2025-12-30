@@ -14,7 +14,8 @@ ModuleAudio::ModuleAudio(Application* app, bool start_enabled) : Module(app, sta
 
 // Destructor
 ModuleAudio::~ModuleAudio()
-{}
+{
+}
 
 // Called before render is available
 bool ModuleAudio::Init()
@@ -22,11 +23,21 @@ bool ModuleAudio::Init()
 	LOG("Loading Audio Mixer");
 	bool ret = true;
 
-    LOG("Loading raylib audio system");
+	LOG("Loading raylib audio system");
 
-    InitAudioDevice();
+	InitAudioDevice();
 
 	return ret;
+}
+
+update_status ModuleAudio::Update()
+{
+	if (IsMusicReady(music))
+	{
+		UpdateMusicStream(music);
+	}
+
+	return UPDATE_CONTINUE;
 }
 
 // Called before quitting
@@ -34,59 +45,75 @@ bool ModuleAudio::CleanUp()
 {
 	LOG("Freeing sound FX, closing Mixer and Audio subsystem");
 
-    // Unload sounds
+	// Unload sounds
 	for (unsigned int i = 0; i < fx_count; i++)
 	{
 		UnloadSound(fx[i]);
 	}
 
-    // Unload music
+	// Unload music
 	if (IsMusicReady(music))
 	{
 		StopMusicStream(music);
 		UnloadMusicStream(music);
 	}
 
-    CloseAudioDevice();
+	CloseAudioDevice();
 
 	return true;
 }
 
 // Play a music file
-bool ModuleAudio::PlayMusic(const char* path, float fade_time)
+bool ModuleAudio::PlayMusic(const char* path, float fade_time, bool loop)
 {
-	if(IsEnabled() == false)
+	if (IsEnabled() == false)
 		return false;
 
 	bool ret = true;
-	
-    StopMusicStream(music);
-    music = LoadMusicStream(path);
-    
-    PlayMusicStream(music);
+
+	if (IsMusicReady(music))
+	{
+		StopMusicStream(music);
+		UnloadMusicStream(music);
+	}
+
+	music = LoadMusicStream(path);
+	music.looping = loop;
+
+	PlayMusicStream(music);
 
 	LOG("Successfully playing %s", path);
 
 	return ret;
 }
 
+void ModuleAudio::StopMusic()
+{
+	if (!IsMusicReady(music))
+		return;
+
+	StopMusicStream(music);
+	UnloadMusicStream(music);
+	music = Music{ 0 };
+}
+
 // Load WAV
 unsigned int ModuleAudio::LoadFx(const char* path)
 {
-	if(IsEnabled() == false)
+	if (IsEnabled() == false)
 		return 0;
 
 	unsigned int ret = 0;
 
 	Sound sound = LoadSound(path);
 
-	if(sound.stream.buffer == NULL)
+	if (sound.stream.buffer == NULL)
 	{
 		LOG("Cannot load sound: %s", path);
 	}
 	else
 	{
-        fx[fx_count] = sound;
+		fx[fx_count] = sound;
 		ret = fx_count++;
 	}
 
@@ -99,7 +126,7 @@ bool ModuleAudio::PlayFx(unsigned int id, int repeat)
 	if (!IsEnabled() || id >= fx_count)
 		return false;
 
-	
+
 	if (!IsSoundPlaying(fx[id]))
 	{
 		PlaySound(fx[id]);
